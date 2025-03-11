@@ -1,27 +1,33 @@
 {
-  "name": "salesscout",
+  "name": "sales-scout-api",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "node dist/server.ts",
+    "build:client": "cd client && npm run build",
+    "build:all": "npm run build && npm run build:client",
+    "start": "node dist/server.js",
+    "start:prod": "NODE_ENV=production node dist/server.js",
     "server": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register server.ts",
-    "client": "npm start --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "prod": "npm run build:all && npm run start:prod"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/cors": "^2.8.17",
     "axios": "^1.8.2",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.12.1"
+    "mongoose": "^8.12.1",
+    "uncors": "^0.4.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

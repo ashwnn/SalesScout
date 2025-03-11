@@ -6,6 +6,7 @@ import queryRoutes from '@/routes/queryRoutes';
 import { initializeScheduler } from '@/services/schedulerService';
 import { scrapeRedFlagDeals } from '@/controllers/dealController';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 dotenv.config();
 
@@ -36,20 +37,13 @@ connectDB().then(() => {
   initializeScheduler();
   setupAutomaticScraping();
 });
-
 app.use(express.json());
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3005');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
+app.use(cors({
+  origin: 'http://localhost:3005',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+}));
 
 app.use('/api/deals', dealRoutes);
 app.use('/api/users', userRoutes);
