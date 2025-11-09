@@ -5,6 +5,13 @@ import axios from "axios";
 import { DealType } from "@/types";
 
 /**
+ * Escape special regex characters to prevent ReDoS attacks
+ */
+const escapeRegex = (str: string): string => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+/**
  * Notes:
  * - Targets the Trending view structure: /hot-deals-f9/trending/
  * - Selects only <li class="topic"> to avoid ads and other containers
@@ -221,10 +228,20 @@ export const getDeals = async (req: Request, res: Response) => {
     }
     if (search) {
       const q = String(search);
+      // Escape special regex characters to prevent ReDoS attacks
+      const escapedQuery = escapeRegex(q);
+      // Limit search query length to prevent abuse
+      if (escapedQuery.length > 100) {
+        res.status(400).json({
+          success: false,
+          message: 'Search query too long (max 100 characters)'
+        });
+        return;
+      }
       filter.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } }, // if you do not store description, remove this
-        { dealer: { $regex: q, $options: "i" } },
+        { title: { $regex: escapedQuery, $options: "i" } },
+        { description: { $regex: escapedQuery, $options: "i" } },
+        { dealer: { $regex: escapedQuery, $options: "i" } },
       ];
     }
 
@@ -253,8 +270,7 @@ export const getDeals = async (req: Request, res: Response) => {
     console.error("Error fetching deals:", error);
     res.status(500).json({
       success: false,
-      message: "Error fetching deals",
-      error: error.message,
+      message: "Error fetching deals"
     });
   }
 };
@@ -272,8 +288,7 @@ export const triggerScrape = async (_req: Request, res: Response) => {
     console.error("Error triggering scrape:", error);
     res.status(500).json({
       success: false,
-      message: "Error triggering scrape",
-      error: error.message,
+      message: "Error triggering scrape"
     });
   }
 };

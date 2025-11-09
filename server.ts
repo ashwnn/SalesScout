@@ -9,18 +9,54 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import Deal from './models/Deal';
+import helmet from 'helmet';
 
 dotenv.config();
 
 const app = express();
 const PORT: number | string = process.env.PORT || 3311;
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Request Size Limits - Prevent DoS via large payloads
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// CORS Configuration
+const allowedOrigins = [
+  'http://localhost:3005',
+  'http://localhost:3000',
+  // Add your production URLs from environment variables
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  ...(process.env.PRODUCTION_URL ? [process.env.PRODUCTION_URL] : [])
+].filter(Boolean);
 
 app.use(cors({
-  origin: ['http://localhost:3005', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
@@ -67,10 +103,10 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
+  // Never expose stack traces - security risk
   res.status(statusCode).json({
     success: false,
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: statusCode === 500 ? 'Internal Server Error' : message
   });
 });
 

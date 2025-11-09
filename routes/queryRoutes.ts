@@ -4,17 +4,20 @@ import {
   getUserQueries, 
   getQuery, 
   updateQuery, 
-  deleteQuery 
+  deleteQuery,
+  createQueryValidation
 } from '../controllers/queryController';
 import { protect } from '../middleware/auth';
+import { apiRateLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
 
-// All query routes are protected
+// All query routes are protected and rate limited
 router.use(protect);
+router.use(apiRateLimiter);
 
 router.route('/')
-  .post(createQuery)
+  .post(createQueryValidation, createQuery)
   .get(getUserQueries);
 
 router.route('/:id')

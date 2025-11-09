@@ -1,51 +1,73 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import { body, validationResult } from 'express-validator';
+import validator from 'validator';
 
-// Get JWT secret from environment or use a default (for dev only)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// Get JWT secret from environment - must be set (checked in auth.ts)
+const JWT_SECRET = process.env.JWT_SECRET!;
+
+// Validation rules for registration
+export const registerValidation = [
+  body('username')
+    .trim()
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('Username can only contain letters, numbers, underscores, and hyphens')
+    .escape(),
+  body('email')
+    .trim()
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail()
+    .escape(),
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters long')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)')
+];
+
+// Validation rules for login
+export const loginValidation = [
+  body('username')
+    .trim()
+    .notEmpty()
+    .withMessage('Username is required')
+    .escape(),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+];
+
 
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, email, password } = req.body;
-
     // Validate input
-    if (!username || !email || !password) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       res.status(400).json({ 
         success: false, 
-        message: 'Please provide username, email, and password' 
+        message: errors.array()[0].msg,
+        errors: errors.array()
       });
       return;
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      res.status(400).json({ 
+    // Check if registration is enabled
+    const registrationEnabled = process.env.ALLOW_REGISTRATION === 'true';
+    
+    if (!registrationEnabled) {
+      res.status(403).json({ 
         success: false, 
-        message: 'Please provide a valid email address' 
+        message: 'Registration is currently disabled. Please contact the administrator.' 
       });
       return;
     }
 
-    // Validate password length
-    if (password.length < 6) {
-      res.status(400).json({ 
-        success: false, 
-        message: 'Password must be at least 6 characters long' 
-      });
-      return;
-    }
-
-    // Validate username length
-    if (username.length < 3) {
-      res.status(400).json({ 
-        success: false, 
-        message: 'Username must be at least 3 characters long' 
-      });
-      return;
-    }
+    const { username, email, password } = req.body;
 
     // Check if user already exists
     let user = await User.findOne({ $or: [{ email }, { username }] });
@@ -84,8 +106,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     console.error('Registration error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Error registering user',
-      error: error.message
+      message: 'Error registering user'
     });
   }
 };
@@ -93,16 +114,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 // Login user
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, password } = req.body;
-
     // Validate input
-    if (!username || !password) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       res.status(400).json({ 
         success: false, 
-        message: 'Please provide username and password' 
+        message: errors.array()[0].msg
       });
       return;
     }
+
+    const { username, password } = req.body;
 
     // Check for user
     const user = await User.findOne({ username });
@@ -141,8 +163,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     console.error('Login error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Error logging in',
-      error: error.message
+      message: 'Error logging in'
     });
   }
 };
@@ -173,8 +194,7 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
     console.error('Get profile error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Error fetching profile',
-      error: error.message
+      message: 'Error fetching profile'
     });
   }
 };
