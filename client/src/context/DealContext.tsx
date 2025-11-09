@@ -57,8 +57,9 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Check if we have a valid response
       if (res && res.data) {
-        // The API returns deals directly, not within a data property
-        setDeals(Array.isArray(res.data) ? res.data : []);
+        // The API returns { success, page, count, deals }
+        const dealsData = res.data.deals || res.data;
+        setDeals(Array.isArray(dealsData) ? dealsData : []);
         setError(null);
       } else {
         throw new Error('Invalid response format');

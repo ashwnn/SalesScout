@@ -43,10 +43,10 @@ api.interceptors.response.use(
 const checkConnection = async () => {
   try {
     const response = await axios.get(process.env.REACT_APP_API_URL || 'http://localhost:3311');
-    console.log('✅ Connected to API server:', response.data);
+    console.log('Connected to API server:', response.data);
     return true;
   } catch (error) {
-    console.error('❌ API server connection failed:', error);
+    console.error('API server connection failed:', error);
     return false;
   }
 };

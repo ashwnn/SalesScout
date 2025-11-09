@@ -59,7 +59,7 @@ export const connectDB = async () => {
 
     await mongoose.connect(uri, options);
     
-    console.log('✅ MongoDB connected successfully');
+    console.log('MongoDB connected successfully');
     console.log(`📍 Database: ${mongoose.connection.name}`);
     
     // Initialize collections and indexes
@@ -67,7 +67,7 @@ export const connectDB = async () => {
     
     // Handle connection events
     mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB connection error:', err);
+      console.error('MongoDB connection error:', err);
     });
 
     mongoose.connection.on('disconnected', () => {
@@ -75,11 +75,11 @@ export const connectDB = async () => {
     });
 
     mongoose.connection.on('reconnected', () => {
-      console.log('✅ MongoDB reconnected');
+      console.log('MongoDB reconnected');
     });
 
   } catch (err: any) {
-    console.error('❌ MongoDB connection error:', err.message);
+    console.error('MongoDB connection error:', err.message);
     throw err; // Let the caller handle the error
   }
 };

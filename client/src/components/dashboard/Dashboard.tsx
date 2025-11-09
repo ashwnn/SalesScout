@@ -24,6 +24,42 @@ const Dashboard: React.FC = () => {
 
   const activeQueries = queries.filter(query => query.isActive).length;
   
+  // Calculate freshness indicator
+  const getFreshnessIndicator = (createdDate: Date) => {
+    const now = new Date();
+    const created = new Date(createdDate);
+    const ageInHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+    const ageInDays = ageInHours / 24;
+    
+    let status: 'fresh' | 'recent' | 'aging' | 'stale';
+    let color: string;
+    let label: string;
+    
+    if (ageInHours < 24) {
+      // Less than 1 day - Fresh (bright green)
+      status = 'fresh';
+      color = '#22c55e'; // green-500
+      label = 'Fresh';
+    } else if (ageInDays < 3) {
+      // 1-3 days - Recent (light green)
+      status = 'recent';
+      color = '#84cc16'; // lime-500
+      label = 'Recent';
+    } else if (ageInDays < 7) {
+      // 3-7 days - Aging (yellow-green)
+      status = 'aging';
+      color = '#eab308'; // yellow-500
+      label = 'Aging';
+    } else {
+      // Over 7 days - Stale (yellow/orange)
+      status = 'stale';
+      color = '#f59e0b'; // amber-500
+      label = 'Stale';
+    }
+    
+    return { status, color, label, ageInDays: Math.floor(ageInDays) };
+  };
+  
   const recentDeals = [...deals]
     .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
     .slice(0, 5);
@@ -56,24 +92,34 @@ const Dashboard: React.FC = () => {
             <div className="loading-indicator">Loading deals...</div>
           ) : recentDeals.length > 0 ? (
             <ul className="recent-deals-list">
-              {recentDeals.map(deal => (
-                <li key={deal.id} className="recent-deal-item">
-                  <div className="deal-title">
-                    <a href={deal.url} target="_blank" rel="noopener noreferrer">
-                      {deal.title}
-                    </a>
-                  </div>
-                  <div className="deal-meta">
-                    <span className="deal-date">
-                      {new Date(deal.created).toLocaleDateString()}
-                    </span>
-                    <span className="deal-stats">
-                      <span className="votes">{deal.votes} votes</span>
-                      <span className="views">{deal.views} views</span>
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {recentDeals.map(deal => {
+                const freshness = getFreshnessIndicator(deal.created);
+                return (
+                  <li key={deal.id} className="recent-deal-item">
+                    <div className="deal-title">
+                      <a href={deal.url} target="_blank" rel="noopener noreferrer">
+                        {deal.title}
+                      </a>
+                      <span 
+                        className={`freshness-indicator ${freshness.status}`}
+                        style={{ backgroundColor: freshness.color }}
+                        title={`${freshness.label} - ${freshness.ageInDays} day${freshness.ageInDays !== 1 ? 's' : ''} old`}
+                      >
+                        {freshness.label}
+                      </span>
+                    </div>
+                    <div className="deal-meta">
+                      <span className="deal-date">
+                        {new Date(deal.created).toLocaleDateString()}
+                      </span>
+                      <span className="deal-stats">
+                        <span className="votes">{deal.votes} votes</span>
+                        <span className="views">{deal.views} views</span>
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="empty-message">No deals found. <Link to="/deals">Scrape for deals</Link></p>

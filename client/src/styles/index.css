@@ -34,31 +34,6 @@
   --spacing-2xl: 3rem;
 }
 
-.dark {
-  /* Dark mode color palette */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #18181b;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --destructive: #dc2626;
-  --destructive-foreground: #fafafa;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #d4d4d8;
-  
-  /* Dark mode shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-}
-
 /* Base styles */
 * {
   box-sizing: border-box;
@@ -329,19 +304,9 @@ p {
   color: #166534;
 }
 
-.dark .status-badge.active {
-  background-color: #14532d;
-  color: #86efac;
-}
-
 .status-badge.inactive {
   background-color: #fef2f2;
   color: #991b1b;
-}
-
-.dark .status-badge.inactive {
-  background-color: #7f1d1d;
-  color: #fca5a5;
 }
 
 /* Alerts */
@@ -359,34 +324,16 @@ p {
   border: 1px solid #fecaca;
 }
 
-.dark .alert-danger {
-  background-color: #7f1d1d;
-  color: #fca5a5;
-  border: 1px solid #991b1b;
-}
-
 .alert-success {
   background-color: #f0fdf4;
   color: #166534;
   border: 1px solid #dcfce7;
 }
 
-.dark .alert-success {
-  background-color: #14532d;
-  color: #86efac;
-  border: 1px solid #166534;
-}
-
 .alert-info {
   background-color: #eff6ff;
   color: #1e40af;
   border: 1px solid #dbeafe;
-}
-
-.dark .alert-info {
-  background-color: #1e3a8a;
-  color: #bfdbfe;
-  border: 1px solid #1e40af;
 }
 
 /* Auth pages */

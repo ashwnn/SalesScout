@@ -126,12 +126,12 @@ const executeQuery = async (queryId: string): Promise<void> => {
           }
         });
 
-        console.log(`✅ Sent webhook notification for query "${query.name}" with ${matchingDeals.length} matches`);
+        console.log(`Sent webhook notification for query "${query.name}" with ${matchingDeals.length} matches`);
       } catch (webhookError: any) {
-        console.error(`❌ Failed to send webhook for query "${query.name}":`, webhookError.message);
+        console.error(`Failed to send webhook for query "${query.name}":`, webhookError.message);
       }
     } else {
-      console.log(`ℹ️ No new matches found for query "${query.name}"`);
+      console.log(`No new matches found for query "${query.name}"`);
     }
 
     // Update last run time and set next run time

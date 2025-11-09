@@ -7,6 +7,8 @@ import { initializeScheduler } from '@/services/schedulerService';
 import { scrapeRedFlagDeals } from '@/controllers/dealController';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import mongoose from 'mongoose';
+import Deal from './models/Deal';
 
 dotenv.config();
 
@@ -26,16 +28,16 @@ app.use(cors({
 
 // Health check endpoints
 app.get('/', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     message: 'SalesScout API is running',
     timestamp: new Date().toISOString()
   });
 });
 
 app.get('/api', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     message: 'SalesScout API v1.0',
     endpoints: {
       users: '/api/users',
@@ -52,19 +54,19 @@ app.use('/api/queries', queryRoutes);
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
-  res.status(404).json({ 
-    success: false, 
-    message: `Route ${req.method} ${req.originalUrl} not found` 
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.originalUrl} not found`
   });
 });
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('Error:', err);
-  
+
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
-  
+
   res.status(statusCode).json({
     success: false,
     message,
@@ -77,10 +79,10 @@ const setupAutomaticScraping = () => {
   scrapeRedFlagDeals()
     .then(deals => console.log(`Successfully scraped ${deals.length} new deals`))
     .catch(err => console.error('Error in initial scrape:', err.message));
-  
+
   const THIRTY_MINUTES = 30 * 60 * 1000;
   setInterval(async () => {
-    console.log('⏰ Running scheduled deals scrape...');
+    console.log('Running scheduled deals scrape...');
     try {
       const deals = await scrapeRedFlagDeals();
       console.log(`Successfully scraped ${deals.length} new deals at ${new Date().toLocaleString()}`);
@@ -88,8 +90,8 @@ const setupAutomaticScraping = () => {
       console.error('Error in scheduled scrape:', err.message);
     }
   }, THIRTY_MINUTES);
-  
-  console.log('📅 Automatic deal scraping scheduled every 30 minutes');
+
+  console.log('Automatic deal scraping scheduled every 30 minutes');
 };
 
 // Start server only after DB connection
@@ -98,14 +100,14 @@ const startServer = async () => {
     // Connect to database
     await connectDB();
     console.log('Database connected successfully');
-    
+
     // Initialize scheduler
     await initializeScheduler();
     console.log('Scheduler initialized');
-    
+
     // Setup automatic scraping
     setupAutomaticScraping();
-    
+
     // Start Express server
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -116,7 +118,7 @@ const startServer = async () => {
     // Graceful shutdown
     const gracefulShutdown = (signal: string) => {
       console.log(`\n${signal} received. Starting graceful shutdown...`);
-      
+
       server.close(() => {
         console.log('HTTP server closed');
         process.exit(0);
@@ -131,7 +133,7 @@ const startServer = async () => {
 
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-    
+
   } catch (error: any) {
     console.error('Failed to start server:', error.message);
     process.exit(1);

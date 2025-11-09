@@ -15,6 +15,42 @@ const DealsPage: React.FC = () => {
     ? ['all', ...new Set(deals.filter(deal => deal.category).map(deal => deal.category!))]
     : ['all'];
 
+  // Calculate freshness indicator
+  const getFreshnessIndicator = (createdDate: Date) => {
+    const now = new Date();
+    const created = new Date(createdDate);
+    const ageInHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+    const ageInDays = ageInHours / 24;
+    
+    let status: 'fresh' | 'recent' | 'aging' | 'stale';
+    let color: string;
+    let label: string;
+    
+    if (ageInHours < 24) {
+      // Less than 1 day - Fresh (bright green)
+      status = 'fresh';
+      color = '#22c55e'; // green-500
+      label = 'Fresh';
+    } else if (ageInDays < 3) {
+      // 1-3 days - Recent (light green)
+      status = 'recent';
+      color = '#84cc16'; // lime-500
+      label = 'Recent';
+    } else if (ageInDays < 7) {
+      // 3-7 days - Aging (yellow-green)
+      status = 'aging';
+      color = '#eab308'; // yellow-500
+      label = 'Aging';
+    } else {
+      // Over 7 days - Stale (yellow/orange)
+      status = 'stale';
+      color = '#f59e0b'; // amber-500
+      label = 'Stale';
+    }
+    
+    return { status, color, label, ageInDays: Math.floor(ageInDays) };
+  };
+
   // Only fetch deals once when the component mounts
   useEffect(() => {
     getDeals();
@@ -150,46 +186,58 @@ const DealsPage: React.FC = () => {
           </div>
           
           <div className="deals-list">
-            {sortedDeals.map(deal => (
-              <div key={deal.id} className="deal-card">
-                <h3 className="deal-title">
-                  <a href={deal.url} target="_blank" rel="noopener noreferrer">
-                    {deal.title}
-                  </a>
-                </h3>
-                
-                <div className="deal-meta">
-                  <div className="deal-date">
-                    Posted {new Date(deal.created).toLocaleDateString()}
+            {sortedDeals.map(deal => {
+              const freshness = getFreshnessIndicator(deal.created);
+              return (
+                <div key={deal.id} className="deal-card">
+                  <div className="deal-header">
+                    <h3 className="deal-title">
+                      <a href={deal.url} target="_blank" rel="noopener noreferrer">
+                        {deal.title}
+                      </a>
+                    </h3>
+                    <span 
+                      className={`freshness-indicator ${freshness.status}`}
+                      style={{ backgroundColor: freshness.color }}
+                      title={`${freshness.label} - ${freshness.ageInDays} day${freshness.ageInDays !== 1 ? 's' : ''} old`}
+                    >
+                      {freshness.label}
+                    </span>
                   </div>
                   
-                  {deal.category && (
-                    <div className="deal-category">{deal.category}</div>
-                  )}
+                  <div className="deal-meta">
+                    <div className="deal-date">
+                      Posted {new Date(deal.created).toLocaleDateString()}
+                    </div>
+                    
+                    {deal.category && (
+                      <div className="deal-category">{deal.category}</div>
+                    )}
+                  </div>
+                  
+                  <div className="deal-stats">
+                    <span className="stat votes">
+                      <i className="icon-thumbs-up"></i> {deal.votes} votes
+                    </span>
+                    <span className="stat views">
+                      <i className="icon-eye"></i> {deal.views} views
+                    </span>
+                    <span className="stat comments">
+                      <i className="icon-comment"></i> {deal.comments} comments
+                    </span>
+                  </div>
+                  
+                  <a 
+                    href={deal.url}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="deal-link"
+                  >
+                    View Deal
+                  </a>
                 </div>
-                
-                <div className="deal-stats">
-                  <span className="stat votes">
-                    <i className="icon-thumbs-up"></i> {deal.votes} votes
-                  </span>
-                  <span className="stat views">
-                    <i className="icon-eye"></i> {deal.views} views
-                  </span>
-                  <span className="stat comments">
-                    <i className="icon-comment"></i> {deal.comments} comments
-                  </span>
-                </div>
-                
-                <a 
-                  href={deal.url}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="deal-link"
-                >
-                  View Deal
-                </a>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

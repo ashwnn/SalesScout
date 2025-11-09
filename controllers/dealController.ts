@@ -1,71 +1,134 @@
-import { Request, Response } from 'express';
-import Deal from '@/models/Deal';
-import * as cheerio from 'cheerio';
-import axios from 'axios';
-import { DealType } from '@/types';
+import { Request, Response } from "express";
+import Deal from "@/models/Deal";
+import * as cheerio from "cheerio";
+import axios from "axios";
+import { DealType } from "@/types";
+
+/**
+ * Notes:
+ * - Targets the Trending view structure: /hot-deals-f9/trending/
+ * - Selects only <li class="topic"> to avoid ads and other containers
+ * - Reads stats from either inner or outer footers, whichever is present
+ * - Normalizes relative URLs and images
+ * - Uses bulkWrite upserts to avoid N DB calls and keep stats fresh
+ * - Safe number parsing for negatives and formatted numbers
+ */
+
+const BASE_URL = "https://forums.redflagdeals.com";
+const LIST_URL = `${BASE_URL}/hot-deals-f9/trending/`;
+
+const toAbs = (maybeRel?: string) =>
+  maybeRel ? new URL(maybeRel, BASE_URL).toString() : "";
+
+const parseIntSafe = (txt: string): number => {
+  // keep possible leading minus, drop other non-digits
+  const m = txt.replace(/[^0-9-]+/g, "");
+  if (m === "" || m === "-") return 0;
+  const n = parseInt(m, 10);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const text = ($el: cheerio.Cheerio<any>) => $el.text().trim();
+
+const getFirst = ($root: cheerio.Cheerio<any>, selector: string) =>
+  $root.find(selector).first();
+
+const readDate = ($root: cheerio.Cheerio<any>, selector: string): Date | null => {
+  const t = getFirst($root, selector);
+  const iso = t.attr("datetime");
+  if (!iso) return null;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const extractStats = ($topic: cheerio.Cheerio<any>) => {
+  // prefer inner footer, fallback to outer footer
+  const $inner = $topic.find(".thread_info .thread_inner_footer");
+  const $outer = $topic.find(".thread_outer_footer");
+  const $src = $inner.length ? $inner : $outer;
+
+  const votes = parseIntSafe(text(getFirst($src, ".votes.thread_stat span")));
+  const comments = parseIntSafe(text(getFirst($src, ".posts.thread_stat span")));
+  const views = parseIntSafe(text(getFirst($src, ".views.thread_stat")));
+
+  // last replied from the block with .last_post time where available
+  const lastReplied =
+    readDate($src, ".last_post time") ??
+    readDate($topic, ".last_post time") ??
+    null;
+
+  return { votes, comments, views, lastReplied };
+};
 
 export const scrapeRedFlagDeals = async () => {
   try {
-    console.log('🔍 Scraping RedFlagDeals for new deals...');
+    console.log("Scraping RedFlagDeals Trending...");
 
-    const response = await axios.get('https://forums.redflagdeals.com/hot-deals-f9/?sk=pv&rfd_sk=pv&sd=d', {
+    const response = await axios.get(LIST_URL, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
+        "Accept-Language": "en-CA,en;q=0.9",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        Referer: `${BASE_URL}/hot-deals-f9/`,
+        "Cache-Control": "no-cache",
       },
-      timeout: 15000
+      // gzip/deflate handled automatically by axios
+      timeout: 20000,
+      validateStatus: (s) => s >= 200 && s < 400,
+      // follow redirects if the forum moves you between list variants
+      maxRedirects: 3,
     });
 
-    if (!response || !response.data) {
-      console.error('❌ No response data received from RedFlagDeals');
+    if (!response?.data) {
+      console.error("No response data received from RedFlagDeals");
       return [];
     }
 
     const $ = cheerio.load(response.data);
+
+    const topics = $("ul.topiclist.topics li.topic");
+    if (!topics.length) {
+      console.warn("No <li.topic> items found. The site structure may have changed.");
+      return [];
+    }
+
+    const seen = new Set<string>();
     const scrapedDeals: DealType[] = [];
 
-    $('.thread_info').each((index, element) => {
+    topics.each((_, li) => {
       try {
-        const titleElement = $(element).find('.thread_title a');
-        const title = titleElement.text().trim();
-        
-        if (!title) return; // Skip if no title found
-        
-        const relativeUrl = titleElement.attr('href');
-        const url = relativeUrl ? `https://forums.redflagdeals.com${relativeUrl}` : '';
+        const $topic = $(li);
+        const threadId = $topic.attr("data-thread-id")?.trim();
 
-        if (!url) return; // Skip if no URL found
+        const $titleA = $topic.find("h3.thread_title a.thread_title_link").first();
+        const title = text($titleA);
+        const url = toAbs($titleA.attr("href"));
 
-        const votesText = $(element).find('.thread_stats .vote_count').text().trim();
-        const votes = parseInt(votesText) || 0;
+        if (!title || !url) return;
 
-        const viewsText = $(element).find('.thread_stats .thread_views').text().trim().replace(/[^\d]/g, '');
-        const views = parseInt(viewsText) || 0;
+        // dedupe by URL in case the page renders multiple stat blocks
+        if (seen.has(url)) return;
+        seen.add(url);
 
-        const commentsText = $(element).find('.thread_stats .thread_replies').text().trim().replace(/[^\d]/g, '');
-        const comments = parseInt(commentsText) || 0;
+        const category =
+          text($topic.find(".thread_inner_header .thread_category").first()) || "Other";
 
-        let category = $(element).find('.thread_category').text().trim();
-        if (!category) {
-          category = 'Other';
-        }
+        const dealer =
+          text($topic.find(".thread_inner_header .thread_dealer span").first()) || undefined;
 
-        let created = new Date();
-        const createdElement = $(element).find('.author_info time');
-        if (createdElement.length) {
-          const dateTimeAttr = createdElement.attr('datetime');
-          if (dateTimeAttr) {
-            created = new Date(dateTimeAttr);
-          }
-        }
+        const savings =
+          text($topic.find(".thread_inner_header .savings").first()) || undefined;
 
-        let last_replied = new Date();
-        const lastRepliedText = $(element).find('.last_post time');
-        if (lastRepliedText.length) {
-          const dateTimeAttr = lastRepliedText.attr('datetime');
-          if (dateTimeAttr) {
-            last_replied = new Date(dateTimeAttr);
-          }
-        }
+        const created =
+          readDate($topic, ".thread_outer_header .author_info time") ??
+          readDate($topic, ".thread_inner_footer .author_info time") ??
+          null;
+
+        const { votes, comments, views, lastReplied } = extractStats($topic);
+
+        const imageSrc = toAbs($topic.find(".thread_image img").attr("src"));
 
         const deal: DealType = {
           title,
@@ -73,103 +136,144 @@ export const scrapeRedFlagDeals = async () => {
           votes,
           views,
           comments,
-          created,
-          last_replied,
-          category
+          created: created ?? new Date(),
+          last_replied: lastReplied ?? new Date(),
+          category,
+          // keep extras if your schema supports them
+          // @ts-ignore optional fields
+          dealer,
+          // @ts-ignore optional fields
+          savings,
+          // @ts-ignore optional fields
+          thread_id: threadId,
+          // @ts-ignore optional fields
+          image: imageSrc,
         };
 
         scrapedDeals.push(deal);
       } catch (err: any) {
-        console.error('⚠️ Error parsing individual deal:', err.message);
+        console.error("Error parsing a topic item:", err?.message || err);
       }
     });
 
-    if (scrapedDeals.length === 0) {
-      console.warn('⚠️ No deals found during scraping. Site structure may have changed.');
+    if (!scrapedDeals.length) {
+      console.warn("Parsed zero deals from page.");
       return [];
     }
 
-    const savedDeals = [];
+    // Upsert in bulk: insert new items, refresh rolling stats on existing
+    // Suggestion on your Mongoose schema:
+    // DealSchema.index({ url: 1 }, { unique: true });
+    const ops = scrapedDeals.map((d) => ({
+      updateOne: {
+        filter: { url: d.url },
+        update: {
+          $setOnInsert: {
+            title: d.title,
+            url: d.url,
+            created: d.created,
+          },
+          $set: {
+            // keep these current
+            votes: d.votes,
+            views: d.views,
+            comments: d.comments,
+            last_replied: d.last_replied,
+            category: d.category,
+            ...(d as any).dealer ? { dealer: (d as any).dealer } : {},
+            ...(d as any).savings ? { savings: (d as any).savings } : {},
+            ...(d as any).thread_id ? { thread_id: (d as any).thread_id } : {},
+            ...(d as any).image ? { image: (d as any).image } : {},
+          },
+        },
+        upsert: true,
+      },
+    }));
 
-    for (const deal of scrapedDeals) {
-      try {
-        const existingDeal = await Deal.findOne({ url: deal.url });
+    const result = await Deal.bulkWrite(ops, { ordered: false });
 
-        if (!existingDeal) {
-          const newDeal = new Deal(deal);
-          const savedDeal = await newDeal.save();
-          savedDeals.push(savedDeal);
-        }
-      } catch (saveError: any) {
-        console.error(`⚠️ Error saving deal "${deal.title}":`, saveError.message);
-      }
-    }
+    // Gather newly inserted ids and return the new docs
+    const upsertedIds: string[] = Object.values(result.upsertedIds || {}) as any[];
+    const savedDeals = upsertedIds.length
+      ? await Deal.find({ _id: { $in: upsertedIds } }).lean()
+      : [];
 
-    console.log(`✅ Scraping complete. Found ${scrapedDeals.length} deals, saved ${savedDeals.length} new deals.`);
+    console.log(
+      `Scraping complete. Parsed ${scrapedDeals.length} topics, inserted ${savedDeals.length}, matched ${result.matchedCount}.`
+    );
+
     return savedDeals;
   } catch (error: any) {
-    console.error('❌ Error in scrapeRedFlagDeals:', error.message);
+    console.error("Error in scrapeRedFlagDeals:", error?.message || error);
     throw error;
   }
 };
 
+/* Optional polish for your existing endpoints */
+
 export const getDeals = async (req: Request, res: Response) => {
   try {
-    const { category, search, limit, sort } = req.query;
-    
-    // Build filter
+    const { category, search, limit, sort, page } = req.query;
+
     const filter: any = {};
-    
-    if (category && category !== 'all') {
+    if (category && category !== "all") {
       filter.category = category;
     }
-    
     if (search) {
+      const q = String(search);
       filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } }, // if you do not store description, remove this
+        { dealer: { $regex: q, $options: "i" } },
       ];
     }
-    
-    // Parse limit
-    const limitNum = limit ? parseInt(limit as string) : 100;
-    
-    // Parse sort
-    let sortOption: any = { created: -1 }; // Default: newest first
-    if (sort === 'votes') sortOption = { votes: -1 };
-    if (sort === 'views') sortOption = { views: -1 };
-    if (sort === 'comments') sortOption = { comments: -1 };
-    
-    const deals = await Deal.find(filter)
-      .sort(sortOption)
-      .limit(limitNum);
-      
-    res.json(deals);
+
+    const limitNum = Math.max(1, Math.min(200, parseInt(String(limit || 100), 10) || 100));
+    const pageNum = Math.max(1, parseInt(String(page || 1), 10) || 1);
+    const skip = (pageNum - 1) * limitNum;
+
+    const sortMap: Record<string, any> = {
+      created: { created: -1 },
+      votes: { votes: -1 },
+      views: { views: -1 },
+      comments: { comments: -1 },
+      last_replied: { last_replied: -1 },
+    };
+    const sortOption = sortMap[String(sort || "created")] || sortMap.created;
+
+    const deals = await Deal.find(filter).sort(sortOption).skip(skip).limit(limitNum).lean();
+
+    res.json({
+      success: true,
+      page: pageNum,
+      count: deals.length,
+      deals,
+    });
   } catch (error: any) {
-    console.error('Error fetching deals:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching deals',
-      error: error.message 
+    console.error("Error fetching deals:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching deals",
+      error: error.message,
     });
   }
 };
 
-export const triggerScrape = async (req: Request, res: Response) => {
+export const triggerScrape = async (_req: Request, res: Response) => {
   try {
     const deals = await scrapeRedFlagDeals();
-    res.json({ 
+    res.json({
       success: true,
       message: `Successfully scraped ${deals.length} new deals`,
       count: deals.length,
-      deals
+      deals,
     });
   } catch (error: any) {
-    console.error('Error triggering scrape:', error);
-    res.status(500).json({ 
+    console.error("Error triggering scrape:", error);
+    res.status(500).json({
       success: false,
-      message: 'Error triggering scrape',
-      error: error.message
+      message: "Error triggering scrape",
+      error: error.message,
     });
   }
 };
