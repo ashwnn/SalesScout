@@ -1,24 +1,25 @@
 /* Toggle Switch */
 .switch-container {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--spacing-xl);
 }
 
 .switch-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-sm);
 }
 
 .switch-header label {
-    font-weight: 500;
-    font-size: 0.875rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
     color: var(--foreground);
     margin: 0;
 }
 
 .switch-description {
     color: var(--muted-foreground);
+    font-size: 0.875rem;
 }
 
 .switch {
@@ -42,7 +43,7 @@
     right: 0;
     bottom: 0;
     background-color: var(--muted);
-    transition: .3s;
+    transition: all 0.3s ease;
     border-radius: 34px;
     border: 1px solid var(--border);
 }
@@ -55,16 +56,18 @@
     left: 2px;
     bottom: 2px;
     background-color: white;
-    transition: .3s;
+    transition: all 0.3s ease;
     border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 input:checked+.slider {
     background-color: #16a34a;
+    border-color: #16a34a;
 }
 
 input:focus+.slider {
-    box-shadow: 0 0 1px #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
 }
 
 input:checked+.slider:before {
@@ -87,18 +90,18 @@ input:checked+.slider:before {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
     border-top: 1px solid var(--border);
 }
 
 .form-actions .btn {
-    padding: 0.625rem 1.25rem;
-    font-weight: 500;
+    padding: 0.75rem var(--spacing-lg);
+    font-weight: 600;
     min-width: 120px;
     text-align: center;
-    transition: transform 0.1s, box-shadow 0.2s;
+    transition: all 0.2s ease;
 }
 
 .form-actions .btn:hover {

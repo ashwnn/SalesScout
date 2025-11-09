@@ -48,14 +48,16 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   
   const { isAuthenticated } = useContext(AuthContext);
   const initialLoadDone = useRef(false);
+  const isFetching = useRef(false);
 
   // Memoize the getQueries function to prevent unnecessary re-renders
   const getQueries = useCallback(async () => {
-    if (loading) return; // Prevent multiple simultaneous requests
+    if (isFetching.current) return; // Prevent multiple simultaneous requests
     
     try {
+      isFetching.current = true;
       setLoading(true);
-      const res = await api.get('/api/queries');
+      const res = await api.get('/queries');
       
       if (res.data && res.data.data) {
         setQueries(res.data.data);
@@ -66,16 +68,18 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Error fetching queries:', err);
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
-  }, [loading]);
+  }, []); // Remove loading from dependencies
 
   // Memoize the getQuery function to prevent unnecessary re-renders
   const getQuery = useCallback(async (id: string) => {
-    if (loading) return; // Prevent multiple simultaneous requests
+    if (isFetching.current) return; // Prevent multiple simultaneous requests
     
     try {
+      isFetching.current = true;
       setLoading(true);
-      const res = await api.get(`/api/queries/${id}`);
+      const res = await api.get(`/queries/${id}`);
       
       if (res.data && res.data.data) {
         setCurrentQuery(res.data.data);
@@ -86,8 +90,9 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Error fetching query details:', err);
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
-  }, [loading]);
+  }, []); // Remove loading from dependencies
 
   // Initial load when authenticated
   useEffect(() => {
@@ -103,11 +108,12 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Memoized CRUD functions
   const createQuery = useCallback(async (queryData: Partial<Query>) => {
-    if (loading) return Promise.reject('Operation in progress');
+    if (isFetching.current) return Promise.reject('Operation in progress');
     
     try {
+      isFetching.current = true;
       setLoading(true);
-      const res = await api.post('/api/queries', queryData);
+      const res = await api.post('/queries', queryData);
       
       if (res.data && res.data.data) {
         setQueries(prevQueries => [...prevQueries, res.data.data]);
@@ -123,15 +129,17 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return Promise.reject(err);
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
-  }, [loading]);
+  }, []);
 
   const updateQuery = useCallback(async (id: string, queryData: Partial<Query>) => {
-    if (loading) return Promise.reject('Operation in progress');
+    if (isFetching.current) return Promise.reject('Operation in progress');
     
     try {
+      isFetching.current = true;
       setLoading(true);
-      const res = await api.put(`/api/queries/${id}`, queryData);
+      const res = await api.put(`/queries/${id}`, queryData);
       
       if (res.data && res.data.data) {
         setQueries(prevQueries => 
@@ -149,21 +157,21 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return Promise.reject(err);
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
-  }, [loading]);
+  }, []);
 
   const deleteQuery = useCallback(async (id: string) => {
-    if (loading) return Promise.reject('Operation in progress');
+    if (isFetching.current) return Promise.reject('Operation in progress');
     
     try {
+      isFetching.current = true;
       setLoading(true);
-      await api.delete(`/api/queries/${id}`);
+      await api.delete(`/queries/${id}`);
       
       setQueries(prevQueries => prevQueries.filter(query => query.id !== id));
       
-      if (currentQuery && currentQuery.id === id) {
-        setCurrentQuery(null);
-      }
+      setCurrentQuery(prev => (prev && prev.id === id) ? null : prev);
       
       setError(null);
       return Promise.resolve();
@@ -174,8 +182,9 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return Promise.reject(err);
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
-  }, [loading, currentQuery]);
+  }, []);
 
   const clearCurrentQuery = useCallback(() => {
     setCurrentQuery(null);

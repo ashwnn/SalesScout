@@ -1,10 +1,12 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import '@/styles/header.css'
 
 const Header: React.FC = () => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -33,6 +35,16 @@ const Header: React.FC = () => {
                 <li>
                   <Link to="/queries">Queries</Link>
                 </li>
+                <li>
+                  <button 
+                    onClick={toggleTheme} 
+                    className="theme-toggle"
+                    aria-label="Toggle theme"
+                    title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+                  >
+                    {theme === 'light' ? '🌙' : '☀️'}
+                  </button>
+                </li>
                 <li className="dropdown">
                   <div className="dropdown-toggle">
                     {user?.username}
@@ -53,6 +65,16 @@ const Header: React.FC = () => {
             </>
           ) : (
             <ul className="nav-links">
+              <li>
+                <button 
+                  onClick={toggleTheme} 
+                  className="theme-toggle"
+                  aria-label="Toggle theme"
+                  title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+                >
+                  {theme === 'light' ? '🌙' : '☀️'}
+                </button>
+              </li>
               <li>
                 <Link to="/login">Login</Link>
               </li>

@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token) {
         api.setAuthToken(token);
         try {
-          const res = await api.get('/api/users/profile');
+          const res = await api.get('/users/profile');
           setUser(res.data.user);
           setIsAuthenticated(true);
         } catch (err) {
@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string) => {
     try {
-      const res = await api.post('/api/users/login', { username, password });
+      const res = await api.post('/users/login', { username, password });
       const { token: newToken, user: userData } = res.data;
       
       localStorage.setItem('token', newToken);
@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      const res = await api.post('/api/users/register', { username, email, password });
+      const res = await api.post('/users/register', { username, email, password });
       const { token: newToken, user: userData } = res.data;
       
       localStorage.setItem('token', newToken);
@@ -103,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (userData: Partial<User>) => {
     try {
-      const res = await api.put('/api/users/profile', userData);
+      const res = await api.put('/users/profile', userData);
       setUser(res.data.user);
     } catch (err) {
       console.error('Update profile error:', err);

@@ -2,11 +2,17 @@
 .header {
     background-color: var(--background);
     border-bottom: 1px solid var(--border);
-    padding: 1rem 0;
+    padding: var(--spacing-md) 0;
     position: sticky;
     top: 0;
     z-index: 100;
     box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(8px);
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.dark .header {
+    background-color: rgba(9, 9, 11, 0.9);
 }
 
 .header .container {
@@ -24,6 +30,7 @@
     font-size: 1.5rem;
     color: var(--foreground);
     margin: 0;
+    letter-spacing: -0.02em;
 }
 
 .logo a {
@@ -31,7 +38,12 @@
     color: inherit;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--spacing-sm);
+    transition: opacity 0.2s;
+}
+
+.logo a:hover {
+    opacity: 0.8;
 }
 
 /* Navigation */
@@ -42,7 +54,7 @@
 
 .nav-links {
     display: flex;
-    gap: 1.5rem;
+    gap: var(--spacing-xl);
     list-style: none;
     margin: 0;
     padding: 0;
@@ -55,7 +67,7 @@
     font-weight: 500;
     font-size: 0.9375rem;
     transition: color 0.2s ease;
-    padding: 0.5rem 0;
+    padding: var(--spacing-sm) 0;
     position: relative;
 }
 
@@ -71,7 +83,7 @@
 .nav-links a.active::after {
     content: '';
     position: absolute;
-    bottom: -2px;
+    bottom: -1px;
     left: 0;
     width: 100%;
     height: 2px;
@@ -87,12 +99,12 @@
 .dropdown-toggle {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--spacing-sm);
     cursor: pointer;
     color: var(--foreground);
-    font-weight: 500;
+    font-weight: 600;
     font-size: 0.9375rem;
-    padding: 0.5rem 0.75rem;
+    padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius);
     transition: background-color 0.2s;
 }
@@ -122,13 +134,13 @@
     position: absolute;
     top: 100%;
     right: 0;
-    margin-top: 0.5rem;
+    margin-top: var(--spacing-sm);
     background-color: var(--background);
-    min-width: 10rem;
+    min-width: 12rem;
     border-radius: var(--radius);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
     border: 1px solid var(--border);
-    padding: 0.5rem 0;
+    padding: var(--spacing-sm) 0;
     z-index: 10;
     opacity: 0;
     visibility: hidden;
@@ -145,7 +157,7 @@
 .dropdown-menu a,
 .dropdown-menu button {
     display: block;
-    padding: 0.5rem 1rem;
+    padding: var(--spacing-sm) var(--spacing-md);
     width: 100%;
     text-align: left;
     font-size: 0.9375rem;
@@ -165,6 +177,30 @@
 
 .logout-btn {
     color: var(--destructive);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25rem;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    background-color: var(--muted);
+    transform: scale(1.1);
+}
+
+.theme-toggle:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
 }
 
 /* Media queries for responsiveness */

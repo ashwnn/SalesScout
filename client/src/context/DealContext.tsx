@@ -44,14 +44,16 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const { isAuthenticated } = useContext(AuthContext);
   const initialLoadDone = useRef(false);
+  const isFetching = useRef(false);
 
   // Memoized getDeals function to prevent unnecessary re-renders
   const getDeals = useCallback(async () => {
-    if (loading) return; // Prevent concurrent requests
+    if (isFetching.current) return; // Prevent concurrent requests
     
     try {
+      isFetching.current = true;
       setLoading(true);
-      const res = await api.get('/api/deals');
+      const res = await api.get('/deals');
       
       // Check if we have a valid response
       if (res && res.data) {
@@ -66,8 +68,9 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(err.response?.data?.message || 'Error fetching deals');
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
-  }, [loading]);
+  }, []); // Remove loading from dependencies
 
   // Load deals once when authenticated
   useEffect(() => {
@@ -86,19 +89,23 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFilteredDeals(deals);
   }, [deals]);
 
-  const scrapeFreshDeals = async () => {
-    if (loading) return; // Prevent concurrent requests
+  const scrapeFreshDeals = useCallback(async () => {
+    if (isFetching.current) return; // Prevent concurrent requests
     
     try {
+      isFetching.current = true;
       setLoading(true);
-      const res = await api.get('/api/deals/scrape');
+      const res = await api.get('/deals/scrape');
       
       // Check if the response is valid
       if (res && res.data) {
-        // The scrape endpoint might return differently, check both formats
-        const dealsData = res.data.data || res.data;
+        // The scrape endpoint returns { success, message, count, deals }
+        const dealsData = res.data.deals || res.data.data || res.data;
         setDeals(Array.isArray(dealsData) ? dealsData : []);
         setError(null);
+        
+        // Refresh the full deal list after scraping
+        await getDeals();
       } else {
         throw new Error('Invalid response format');
       }
@@ -107,8 +114,9 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(err.response?.data?.message || 'Error scraping fresh deals');
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
-  };
+  }, [getDeals]);
 
   // Memoized filterDeals function
   const filterDeals = useCallback((searchTerm: string, category?: string) => {

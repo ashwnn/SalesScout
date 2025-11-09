@@ -10,87 +10,98 @@ import QueryDetail from '@/components/queries/QueryDetail';
 import DealsPage from '@/components/DealsPage';
 import Profile from '@/components/auth/Profile';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ToastContainer } from '@/components/Toast';
 import { AuthProvider } from '@/context/AuthContext';
 import { QueryProvider } from '@/context/QueryContext';
 import { DealProvider } from '@/context/DealContext';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { ToastProvider } from '@/context/ToastContext';
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <QueryProvider>
-          <DealProvider>
-            <div className="app">
-              <Header />
-              <main className="container">
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route 
-                    path="/dashboard" 
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/queries" 
-                    element={
-                      <ProtectedRoute>
-                        <QueryList />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/queries/new" 
-                    element={
-                      <ProtectedRoute>
-                        <QueryForm />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/queries/:id" 
-                    element={
-                      <ProtectedRoute>
-                        <QueryDetail />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/queries/:id/edit" 
-                    element={
-                      <ProtectedRoute>
-                        <QueryForm />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/deals" 
-                    element={
-                      <ProtectedRoute>
-                        <DealsPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/profile" 
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    } 
-                  />
-                </Routes>
-              </main>
-              <Footer />
-            </div>
-          </DealProvider>
-        </QueryProvider>
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ToastProvider>
+          <Router>
+            <AuthProvider>
+              <QueryProvider>
+                <DealProvider>
+                  <div className="app">
+                    <Header />
+                    <main className="container">
+                      <Routes>
+                        <Route path="/" element={<Navigate to="/dashboard" />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route 
+                          path="/dashboard" 
+                          element={
+                            <ProtectedRoute>
+                              <Dashboard />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/queries" 
+                          element={
+                            <ProtectedRoute>
+                              <QueryList />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/queries/new" 
+                          element={
+                            <ProtectedRoute>
+                              <QueryForm />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/queries/:id" 
+                          element={
+                            <ProtectedRoute>
+                              <QueryDetail />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/queries/:id/edit" 
+                          element={
+                            <ProtectedRoute>
+                              <QueryForm />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/deals" 
+                          element={
+                            <ProtectedRoute>
+                              <DealsPage />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/profile" 
+                          element={
+                            <ProtectedRoute>
+                              <Profile />
+                            </ProtectedRoute>
+                          } 
+                        />
+                      </Routes>
+                    </main>
+                    <Footer />
+                    <ToastContainer />
+                  </div>
+                </DealProvider>
+              </QueryProvider>
+            </AuthProvider>
+          </Router>
+        </ToastProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

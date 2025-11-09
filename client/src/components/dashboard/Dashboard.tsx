@@ -7,13 +7,20 @@ import '@/styles/dashboard.css'
 
 const Dashboard: React.FC = () => {
   const { user } = useContext(AuthContext);
-  const { queries, getQueries } = useContext(QueryContext);
-  const { deals, getDeals } = useContext(DealContext);
+  const { queries, loading: queriesLoading, getQueries } = useContext(QueryContext);
+  const { deals, loading: dealsLoading, getDeals } = useContext(DealContext);
 
   useEffect(() => {
-    getQueries();
-    getDeals();
-  }, [getQueries, getDeals]);
+    // Only fetch if we don't have data yet
+    // The contexts already handle initial loading when authenticated
+    if (queries.length === 0 && !queriesLoading) {
+      getQueries();
+    }
+    if (deals.length === 0 && !dealsLoading) {
+      getDeals();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only run once on mount
 
   const activeQueries = queries.filter(query => query.isActive).length;
   
@@ -24,8 +31,8 @@ const Dashboard: React.FC = () => {
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">
-        <h1>Welcome, {user?.username}!</h1>
-        <p>Your SalesScout dashboard</p>
+        <h1>Welcome back, {user?.username}!</h1>
+        <p>Here's what's happening with your sales scout</p>
       </div>
       
       <div className="dashboard-stats">
@@ -45,7 +52,9 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-recent">
         <div className="recent-section">
           <h2>Recent Deals</h2>
-          {recentDeals.length > 0 ? (
+          {dealsLoading ? (
+            <div className="loading-indicator">Loading deals...</div>
+          ) : recentDeals.length > 0 ? (
             <ul className="recent-deals-list">
               {recentDeals.map(deal => (
                 <li key={deal.id} className="recent-deal-item">
@@ -74,7 +83,9 @@ const Dashboard: React.FC = () => {
         
         <div className="recent-section">
           <h2>Your Queries</h2>
-          {queries.length > 0 ? (
+          {queriesLoading ? (
+            <div className="loading-indicator">Loading queries...</div>
+          ) : queries.length > 0 ? (
             <ul className="recent-queries-list">
               {queries.slice(0, 5).map(query => (
                 <li key={query.id} className="query-item">
