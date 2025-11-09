@@ -6,29 +6,34 @@ import { DealType } from '@/types';
 
 export const scrapeRedFlagDeals = async () => {
   try {
-    console.log('Scraping RedFlagDeals for new deals...');
+    console.log('🔍 Scraping RedFlagDeals for new deals...');
 
     const response = await axios.get('https://forums.redflagdeals.com/hot-deals-f9/?sk=pv&rfd_sk=pv&sd=d', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      timeout: 15000
     });
 
     if (!response || !response.data) {
-      console.error('No response data received from RedFlagDeals');
+      console.error('❌ No response data received from RedFlagDeals');
       return [];
     }
 
     const $ = cheerio.load(response.data);
-
     const scrapedDeals: DealType[] = [];
 
     $('.thread_info').each((index, element) => {
       try {
         const titleElement = $(element).find('.thread_title a');
         const title = titleElement.text().trim();
+        
+        if (!title) return; // Skip if no title found
+        
         const relativeUrl = titleElement.attr('href');
         const url = relativeUrl ? `https://forums.redflagdeals.com${relativeUrl}` : '';
+
+        if (!url) return; // Skip if no URL found
 
         const votesText = $(element).find('.thread_stats .vote_count').text().trim();
         const votes = parseInt(votesText) || 0;
@@ -74,47 +79,97 @@ export const scrapeRedFlagDeals = async () => {
         };
 
         scrapedDeals.push(deal);
-      } catch (err) {
-        console.error('Error parsing individual deal:', err);
+      } catch (err: any) {
+        console.error('⚠️ Error parsing individual deal:', err.message);
       }
     });
+
+    if (scrapedDeals.length === 0) {
+      console.warn('⚠️ No deals found during scraping. Site structure may have changed.');
+      return [];
+    }
 
     const savedDeals = [];
 
     for (const deal of scrapedDeals) {
-      const existingDeal = await Deal.findOne({ url: deal.url });
+      try {
+        const existingDeal = await Deal.findOne({ url: deal.url });
 
-      if (!existingDeal) {
-        const newDeal = new Deal(deal);
-        const savedDeal = await newDeal.save();
-        savedDeals.push(savedDeal);
+        if (!existingDeal) {
+          const newDeal = new Deal(deal);
+          const savedDeal = await newDeal.save();
+          savedDeals.push(savedDeal);
+        }
+      } catch (saveError: any) {
+        console.error(`⚠️ Error saving deal "${deal.title}":`, saveError.message);
       }
     }
 
-    console.log(`Scraping complete. Found ${scrapedDeals.length} deals, saved ${savedDeals.length} new deals.`);
+    console.log(`✅ Scraping complete. Found ${scrapedDeals.length} deals, saved ${savedDeals.length} new deals.`);
     return savedDeals;
-  } catch (error) {
-    console.error('Error in scrapeRedFlagDeals:', error);
+  } catch (error: any) {
+    console.error('❌ Error in scrapeRedFlagDeals:', error.message);
     throw error;
   }
 };
 
 export const getDeals = async (req: Request, res: Response) => {
   try {
-    const deals = await Deal.find().sort({ created: -1 });
+    const { category, search, limit, sort } = req.query;
+    
+    // Build filter
+    const filter: any = {};
+    
+    if (category && category !== 'all') {
+      filter.category = category;
+    }
+    
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Parse limit
+    const limitNum = limit ? parseInt(limit as string) : 100;
+    
+    // Parse sort
+    let sortOption: any = { created: -1 }; // Default: newest first
+    if (sort === 'votes') sortOption = { votes: -1 };
+    if (sort === 'views') sortOption = { views: -1 };
+    if (sort === 'comments') sortOption = { comments: -1 };
+    
+    const deals = await Deal.find(filter)
+      .sort(sortOption)
+      .limit(limitNum);
+      
     res.json(deals);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching deals:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching deals',
+      error: error.message 
+    });
   }
 };
 
 export const triggerScrape = async (req: Request, res: Response) => {
   try {
     const deals = await scrapeRedFlagDeals();
-    res.json({ message: `Successfully scraped ${deals.length} new deals` });
-  } catch (error) {
+    res.json({ 
+      success: true,
+      message: `Successfully scraped ${deals.length} new deals`,
+      count: deals.length,
+      deals
+    });
+  } catch (error: any) {
     console.error('Error triggering scrape:', error);
-    res.status(500).json({ message: 'Error triggering scrape' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Error triggering scrape',
+      error: error.message
+    });
   }
 };

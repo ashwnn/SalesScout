@@ -8,11 +8,40 @@ export const createQuery = async (req: Request, res: Response): Promise<void> =>
   try {
     const { name, keywords, categories, intervalMinutes, webhookUrl } = req.body;
     
+    // Validate required fields
+    if (!name || !keywords || !intervalMinutes || !webhookUrl) {
+      res.status(400).json({ 
+        success: false, 
+        message: 'Please provide name, keywords, intervalMinutes, and webhookUrl'
+      });
+      return;
+    }
+    
+    // Validate keywords is an array with at least one item
+    if (!Array.isArray(keywords) || keywords.length === 0) {
+      res.status(400).json({ 
+        success: false, 
+        message: 'Keywords must be an array with at least one keyword'
+      });
+      return;
+    }
+    
     // Validate minimum interval
     if (intervalMinutes < 30) {
       res.status(400).json({ 
         success: false, 
         message: 'Query interval must be at least 30 minutes'
+      });
+      return;
+    }
+    
+    // Validate webhook URL format
+    try {
+      new URL(webhookUrl);
+    } catch (urlError) {
+      res.status(400).json({ 
+        success: false, 
+        message: 'Invalid webhook URL format'
       });
       return;
     }
@@ -27,7 +56,7 @@ export const createQuery = async (req: Request, res: Response): Promise<void> =>
       userId,
       name,
       keywords,
-      categories,
+      categories: categories || [],
       intervalMinutes,
       webhookUrl,
       nextRun
@@ -40,10 +69,16 @@ export const createQuery = async (req: Request, res: Response): Promise<void> =>
     
     res.status(201).json({
       success: true,
+      message: 'Query created successfully',
       data: savedQuery
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Create query error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error creating query',
+      error: error.message
+    });
   }
 };
 

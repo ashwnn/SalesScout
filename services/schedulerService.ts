@@ -66,30 +66,31 @@ const executeQuery = async (queryId: string): Promise<void> => {
 
     console.log(`Executing query: ${query.name}`);
 
-    // Build filter
-    const filter: any = {
-      $and: []
-    };
+    // Build filter for MongoDB query
+    const filter: any = {};
+    const conditions: any[] = [];
 
-    // Add keyword search
+    // Add keyword search - search in both title and description
     if (query.keywords && query.keywords.length > 0) {
-      const keywordRegexes = query.keywords.map(keyword => new RegExp(keyword, 'i'));
-      filter.$and.push({
+      const keywordConditions = query.keywords.map(keyword => ({
         $or: [
-          { title: { $in: keywordRegexes } },
-          { description: { $in: keywordRegexes } }
+          { title: { $regex: keyword, $options: 'i' } },
+          { description: { $regex: keyword, $options: 'i' } }
         ]
-      });
+      }));
+      
+      // Match ANY keyword (OR condition)
+      conditions.push({ $or: keywordConditions });
     }
 
     // Add categories if specified
-    if (query.categories && query.categories.length > 0) {
-      filter.$and.push({ category: { $in: query.categories } });
+    if (query.categories && query.categories.length > 0 && query.categories[0] !== '') {
+      conditions.push({ category: { $in: query.categories } });
     }
 
-    // If no conditions, empty the $and array
-    if (filter.$and.length === 0) {
-      delete filter.$and;
+    // Combine conditions with AND
+    if (conditions.length > 0) {
+      filter.$and = conditions;
     }
 
     // Get last run time or use a default (1 hour ago)
@@ -98,29 +99,39 @@ const executeQuery = async (queryId: string): Promise<void> => {
     // Find deals matching the filter and created after last run
     const matchingDeals = await DealModel.find({
       ...filter,
-      created: { $gt: lastRun }
+      created: { $gte: lastRun }
     }).sort({ created: -1 });
 
     // If we have matching deals, send webhook notification
     if (matchingDeals.length > 0) {
-      await axios.post(query.webhookUrl, {
-        queryName: query.name,
-        queryId: query.id,
-        matchCount: matchingDeals.length,
-        matches: matchingDeals.map(deal => ({
-          id: deal.id,
-          title: deal.title,
-          url: deal.url,
-          created: deal.created,
-          votes: deal.votes,
-          views: deal.views,
-          comments: deal.comments
-        }))
-      });
+      try {
+        await axios.post(query.webhookUrl, {
+          queryName: query.name,
+          queryId: query.id,
+          matchCount: matchingDeals.length,
+          matches: matchingDeals.map(deal => ({
+            id: deal.id,
+            title: deal.title,
+            url: deal.url,
+            created: deal.created,
+            votes: deal.votes,
+            views: deal.views,
+            comments: deal.comments,
+            category: deal.category
+          }))
+        }, {
+          timeout: 5000,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
 
-      console.log(`Sent webhook notification for query ${query.name} with ${matchingDeals.length} matches`);
+        console.log(`✅ Sent webhook notification for query "${query.name}" with ${matchingDeals.length} matches`);
+      } catch (webhookError: any) {
+        console.error(`❌ Failed to send webhook for query "${query.name}":`, webhookError.message);
+      }
     } else {
-      console.log(`No new matches found for query ${query.name}`);
+      console.log(`ℹ️ No new matches found for query "${query.name}"`);
     }
 
     // Update last run time and set next run time

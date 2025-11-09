@@ -45,10 +45,41 @@ const initializeModels = async (): Promise<void> => {
 
 export const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI as string);
-    console.log('MongoDB connected');
+    // Connection options for better stability
+    const options = {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    };
+
+    const uri = process.env.MONGO_URI || mongoURI;
+    
+    if (!uri) {
+      throw new Error('MongoDB URI is not defined');
+    }
+
+    await mongoose.connect(uri, options);
+    
+    console.log('✅ MongoDB connected successfully');
+    console.log(`📍 Database: ${mongoose.connection.name}`);
+    
+    // Initialize collections and indexes
+    await initializeModels();
+    
+    // Handle connection events
+    mongoose.connection.on('error', (err) => {
+      console.error('❌ MongoDB connection error:', err);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.warn('⚠️ MongoDB disconnected');
+    });
+
+    mongoose.connection.on('reconnected', () => {
+      console.log('✅ MongoDB reconnected');
+    });
+
   } catch (err: any) {
-    console.error('MongoDB connection error:', err.message);
-    process.exit(1);
+    console.error('❌ MongoDB connection error:', err.message);
+    throw err; // Let the caller handle the error
   }
 };
