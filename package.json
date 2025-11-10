@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "concurrently \"ts-node-dev --respawn --transpile-only -r tsconfig-paths/register server.ts\" \"npm run dev --prefix client\"",
     "build": "tsc && tsc-alias && cd client && npm run build",
+    "build:backend": "tsc && tsc-alias",
     "start": "NODE_ENV=production node dist/server.js"
   },
   "keywords": [],

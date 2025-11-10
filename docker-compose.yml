@@ -4,7 +4,7 @@ services:
   # MongoDB service
   mongodb:
     image: mongo:7.0
-    container_name: salesscout-mongodb
+    container_name: sales-scout-mongodb
     restart: unless-stopped
     env_file:
       - .env
@@ -26,42 +26,72 @@ services:
       retries: 5
       start_period: 40s
 
-  # SalesScout Application
-  app:
+  # Backend API service
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: salesscout-app
+      dockerfile: Dockerfile.backend
+    container_name: sales-scout-backend
     restart: unless-stopped
     env_file:
       - .env
     ports:
-      - "${APP_PORT:-3311}:3311"
+      - "${PORT:-3311}:3311"
     environment:
       NODE_ENV: production
       PORT: ${PORT:-3311}
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-admin123}@mongodb:27017/${MONGO_DB_NAME:-redflagdeals}?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3311}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       PRODUCTION_URL: ${PRODUCTION_URL:-}
       ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
       DEMO_MODE: ${DEMO_MODE:-true}
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      RATE_LIMIT_MAX_AUTH: ${RATE_LIMIT_MAX_AUTH:-5}
+      RATE_LIMIT_MAX_SCRAPE: ${RATE_LIMIT_MAX_SCRAPE:-3}
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
       - salesscout-network
     volumes:
-      # Optional: Mount logs directory
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3311/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3311/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # Frontend service
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.frontend
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3311}
+        - REACT_APP_UMAMI_ENABLED=${REACT_APP_UMAMI_ENABLED:-true}
+        - REACT_APP_UMAMI_SRC=${REACT_APP_UMAMI_SRC:-https://umami.bepo.ca/script.js}
+        - REACT_APP_UMAMI_WEBSITE_ID=${REACT_APP_UMAMI_WEBSITE_ID:-c957042a-2f48-4945-a3f2-042c7d4162cc}
+        - REACT_APP_UMAMI_DOMAINS=${REACT_APP_UMAMI_DOMAINS:-bomboclatt.ashwin.lol}
+        - REACT_APP_UMAMI_AUTO_TRACK=${REACT_APP_UMAMI_AUTO_TRACK:-true}
+        - REACT_APP_UMAMI_DEBUG=${REACT_APP_UMAMI_DEBUG:-false}
+    container_name: sales-scout-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    networks:
+      - salesscout-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 networks:
   salesscout-network:
