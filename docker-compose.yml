@@ -13,9 +13,10 @@ services:
     ports:
       - "${MONGO_PORT:-27017}:27017"
     volumes:
-      - ./data/db:/data/db
-      - ./data/configdb:/data/configdb
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
     networks:
+      - salesscout-internal
       - apps
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
@@ -52,9 +53,10 @@ services:
       mongodb:
         condition: service_healthy
     networks:
+      - salesscout-internal
       - apps
     volumes:
-      - ./data/logs:/app/logs
+      - ./logs:/app/logs
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3311/api/health"]
       interval: 30s
@@ -78,7 +80,7 @@ services:
     container_name: sales-scout-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:80"
+      - "1533:80"
     networks:
       - apps
     depends_on:
@@ -94,3 +96,11 @@ services:
 networks:
   apps:
     external: true
+  salesscout-internal:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
