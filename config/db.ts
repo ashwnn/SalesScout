@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 import Deal from '@/models/Deal';
 import User from '@/models/User';
 import Query from '@/models/Query';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('Database');
 
 dotenv.config();
 
@@ -17,29 +20,29 @@ const initializeModels = async (): Promise<void> => {
     const collections = await db.listCollections().toArray();
     const collectionNames = collections.map(collection => collection.name);
     
-    console.log('Checking for required collections...');
+    logger.debug('Checking for required collections...');
     
     if (!collectionNames.includes('deals')) {
-      console.log('Creating deals collection...');
+      logger.info('Creating deals collection...');
       await Deal.createCollection();
-      console.log('Deals collection created');
+      logger.info('Deals collection created');
     }
     
     if (!collectionNames.includes('users')) {
-      console.log('Creating users collection...');
+      logger.info('Creating users collection...');
       await User.createCollection();
-      console.log('Users collection created');
+      logger.info('Users collection created');
     }
     
     if (!collectionNames.includes('queries')) {
-      console.log('Creating queries collection...');
+      logger.info('Creating queries collection...');
       await Query.createCollection();
-      console.log('Queries collection created');
+      logger.info('Queries collection created');
     }
     
-    console.log('All required collections are initialized');
+    logger.info('All required collections are initialized');
   } catch (error) {
-    console.error('Error initializing models:', error);
+    logger.error('Error initializing models:', error);
   }
 };
 
@@ -57,29 +60,30 @@ export const connectDB = async () => {
       throw new Error('MongoDB URI is not defined');
     }
 
+    logger.info('Connecting to MongoDB...');
     await mongoose.connect(uri, options);
     
-    console.log('MongoDB connected successfully');
-    console.log(`📍 Database: ${mongoose.connection.name}`);
+    logger.info('MongoDB connected successfully');
+    logger.info(`Database: ${mongoose.connection.name}`);
     
     // Initialize collections and indexes
     await initializeModels();
     
     // Handle connection events
     mongoose.connection.on('error', (err) => {
-      console.error('MongoDB connection error:', err);
+      logger.error('MongoDB connection error:', err.message);
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.warn('⚠️ MongoDB disconnected');
+      logger.warn('MongoDB disconnected');
     });
 
     mongoose.connection.on('reconnected', () => {
-      console.log('MongoDB reconnected');
+      logger.info('MongoDB reconnected');
     });
 
   } catch (err: any) {
-    console.error('MongoDB connection error:', err.message);
+    logger.error('MongoDB connection error:', err.message);
     throw err; // Let the caller handle the error
   }
 };

@@ -6,6 +6,8 @@ services:
     image: mongo:7.0
     container_name: salesscout-mongodb
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin123}
@@ -31,15 +33,21 @@ services:
       dockerfile: Dockerfile
     container_name: salesscout-app
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "${APP_PORT:-3311}:3311"
     environment:
       NODE_ENV: production
-      PORT: 3311
+      PORT: ${PORT:-3311}
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-admin123}@mongodb:27017/${MONGO_DB_NAME:-redflagdeals}?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3311}
       PRODUCTION_URL: ${PRODUCTION_URL:-}
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
     depends_on:
       mongodb:
         condition: service_healthy

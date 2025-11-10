@@ -5,6 +5,9 @@ import { addQueryToScheduler } from '@/services/schedulerService';
 import { QueryType } from '@/types';
 import { body, validationResult } from 'express-validator';
 import validator from 'validator';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('QueryController');
 
 /**
  * Validate webhook URL to prevent SSRF attacks
@@ -133,6 +136,8 @@ export const createQuery = async (req: Request, res: Response): Promise<void> =>
 
     const savedQuery = await newQuery.save();
     
+    logger.info(`Query created: ${savedQuery.name} (ID: ${savedQuery._id}) by user ${userId}`);
+    
     // Add to scheduler
     addQueryToScheduler(savedQuery as unknown as QueryType);
     
@@ -142,7 +147,7 @@ export const createQuery = async (req: Request, res: Response): Promise<void> =>
       data: savedQuery
     });
   } catch (error: any) {
-    console.error('Create query error:', error);
+    logger.error('Create query error:', error?.message || error);
     res.status(500).json({ 
       success: false, 
       message: 'Error creating query'
@@ -156,6 +161,8 @@ export const getUserQueries = async (req: Request, res: Response): Promise<void>
     const userId = (req as any).user.id;
     const queries = await Query.find({ userId });
     
+    logger.debug(`Retrieved ${queries.length} queries for user ${userId}`);
+    
     // Return queries as-is (MongoDB will include _id)
     res.json({
       success: true,
@@ -163,7 +170,7 @@ export const getUserQueries = async (req: Request, res: Response): Promise<void>
       data: queries
     });
   } catch (error: any) {
-    console.error('Error fetching queries:', error);
+    logger.error('Error fetching queries:', error?.message || error);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching queries'
@@ -264,6 +271,7 @@ export const updateQuery = async (req: Request, res: Response): Promise<void> =>
 
     // Update scheduler
     if (query) {
+      logger.info(`Query updated: ${query.name} (ID: ${queryId}) by user ${userId}`);
       addQueryToScheduler(query as unknown as QueryType);
       
       res.json({
@@ -274,6 +282,7 @@ export const updateQuery = async (req: Request, res: Response): Promise<void> =>
       res.status(404).json({ success: false, message: 'Query not found after update' });
     }
   } catch (error: any) {
+    logger.error('Error updating query:', error?.message || error);
     res.status(500).json({ 
       success: false, 
       message: 'Error updating query'
@@ -300,11 +309,14 @@ export const deleteQuery = async (req: Request, res: Response): Promise<void> =>
       return;
     }
     
+    logger.info(`Query deleted: ${query.name} (ID: ${queryId}) by user ${userId}`);
+    
     res.json({
       success: true,
       message: 'Query deleted successfully'
     });
   } catch (error: any) {
+    logger.error('Error deleting query:', error?.message || error);
     res.status(500).json({ 
       success: false, 
       message: 'Error deleting query'

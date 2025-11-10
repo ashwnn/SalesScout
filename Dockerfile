@@ -28,11 +28,8 @@ RUN cd client && npm ci --ignore-scripts
 # Copy source code
 COPY . .
 
-# Build the server
+# Build both server and client
 RUN npm run build
-
-# Build the client
-RUN npm run build:client
 
 # Production image
 FROM base AS runner
@@ -71,5 +68,5 @@ EXPOSE 3311
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD node -e "require('http').get('http://localhost:3311/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
 
-# Start the application
-CMD ["node", "dist/server.js"]
+# Start the application (Build + Run in Production)
+CMD ["npm", "start"]

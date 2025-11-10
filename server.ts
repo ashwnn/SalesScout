@@ -6,6 +6,7 @@ import queryRoutes from '@/routes/queryRoutes';
 import { initializeScheduler } from '@/services/schedulerService';
 import { scrapeRedFlagDeals } from '@/controllers/dealController';
 import { createDemoUser } from '@/scripts/createDemoUser';
+import logger from '@/utils/logger';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -112,7 +113,7 @@ app.use((req: Request, res: Response) => {
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
+  logger.error('Unhandled error:', err.message, err.stack);
 
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
@@ -125,23 +126,23 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 const setupAutomaticScraping = () => {
-  console.log('Performing initial deals scrape on startup...');
+  logger.info('Performing initial deals scrape on startup...');
   scrapeRedFlagDeals()
-    .then(deals => console.log(`Successfully scraped ${deals.length} new deals`))
-    .catch(err => console.error('Error in initial scrape:', err.message));
+    .then(deals => logger.info(`Successfully scraped ${deals.length} new deals`))
+    .catch(err => logger.error('Error in initial scrape:', err.message));
 
   const THIRTY_MINUTES = 30 * 60 * 1000;
   setInterval(async () => {
-    console.log('Running scheduled deals scrape...');
+    logger.info('Running scheduled deals scrape...');
     try {
       const deals = await scrapeRedFlagDeals();
-      console.log(`Successfully scraped ${deals.length} new deals at ${new Date().toLocaleString()}`);
+      logger.info(`Successfully scraped ${deals.length} new deals at ${new Date().toLocaleString()}`);
     } catch (err: any) {
-      console.error('Error in scheduled scrape:', err.message);
+      logger.error('Error in scheduled scrape:', err.message);
     }
   }, THIRTY_MINUTES);
 
-  console.log('Automatic deal scraping scheduled every 30 minutes');
+  logger.info('Automatic deal scraping scheduled every 30 minutes');
 };
 
 // Start server only after DB connection
@@ -149,37 +150,39 @@ const startServer = async () => {
   try {
     // Connect to database
     await connectDB();
-    console.log('Database connected successfully');
+    logger.info('Database connected successfully');
 
     // Create demo user if demo mode is enabled
     await createDemoUser();
 
     // Initialize scheduler
     await initializeScheduler();
-    console.log('Scheduler initialized');
+    logger.info('Scheduler initialized');
 
     // Setup automatic scraping
     setupAutomaticScraping();
 
     // Start Express server
     const server = app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}`);
-      console.log(`API endpoint: http://localhost:${PORT}/api`);
+      logger.info(`Server running on port ${PORT}`);
+      logger.info(`Health check: http://localhost:${PORT}`);
+      logger.info(`API endpoint: http://localhost:${PORT}/api`);
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`Log level: ${process.env.LOG_LEVEL || 'INFO'}`);
     });
 
     // Graceful shutdown
     const gracefulShutdown = (signal: string) => {
-      console.log(`\n${signal} received. Starting graceful shutdown...`);
+      logger.warn(`${signal} received. Starting graceful shutdown...`);
 
       server.close(() => {
-        console.log('HTTP server closed');
+        logger.info('HTTP server closed');
         process.exit(0);
       });
 
       // Force close after 10 seconds
       setTimeout(() => {
-        console.error('Forced shutdown due to timeout');
+        logger.error('Forced shutdown due to timeout');
         process.exit(1);
       }, 10000);
     };
@@ -188,7 +191,7 @@ const startServer = async () => {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   } catch (error: any) {
-    console.error('Failed to start server:', error.message);
+    logger.error('Failed to start server:', error.message);
     process.exit(1);
   }
 };

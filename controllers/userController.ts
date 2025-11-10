@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { body, validationResult } from 'express-validator';
 import validator from 'validator';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('UserController');
 
 // Get JWT secret from environment - must be set (checked in auth.ts)
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -58,7 +61,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Check if registration is enabled
     const registrationEnabled = process.env.ALLOW_REGISTRATION === 'true';
-    console.log('Registration enabled:', registrationEnabled);
+    logger.debug('Registration enabled:', registrationEnabled);
     
     if (!registrationEnabled) {
       res.status(404).json({ 
@@ -93,6 +96,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     // Generate token
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
 
+    logger.info(`User registered successfully: ${username} (ID: ${user.id})`);
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -104,7 +109,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       }
     });
   } catch (error: any) {
-    console.error('Registration error:', error);
+    logger.error('Registration error:', error?.message || error);
     res.status(500).json({ 
       success: false, 
       message: 'Error registering user'
@@ -150,6 +155,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // Generate token
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
 
+    logger.info(`User logged in: ${username} (ID: ${user.id})`);
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -162,10 +169,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }
     });
   } catch (error: any) {
-    console.error('Get profile error:', error);
+    logger.error('Login error:', error?.message || error);
     res.status(500).json({ 
       success: false, 
-      message: 'Error fetching profile'
+      message: 'Error logging in'
     });
   }
 };
@@ -176,6 +183,8 @@ export const getAppConfig = async (req: Request, res: Response): Promise<void> =
     const demoMode = process.env.DEMO_MODE === 'true';
     const registrationEnabled = process.env.ALLOW_REGISTRATION === 'true';
     
+    logger.debug('App config requested');
+    
     res.json({
       success: true,
       config: {
@@ -184,7 +193,7 @@ export const getAppConfig = async (req: Request, res: Response): Promise<void> =
       }
     });
   } catch (error: any) {
-    console.error('Get app config error:', error);
+    logger.error('Get app config error:', error?.message || error);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching app configuration'
@@ -205,6 +214,8 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    logger.debug(`Profile fetched for user ${user.id}`);
+
     res.json({
       success: true,
       user: {
@@ -216,7 +227,7 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
       }
     });
   } catch (error: any) {
-    console.error('Get profile error:', error);
+    logger.error('Get profile error:', error?.message || error);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching profile'

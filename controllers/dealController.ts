@@ -3,6 +3,9 @@ import Deal from "@/models/Deal";
 import * as cheerio from "cheerio";
 import axios from "axios";
 import { DealType } from "@/types";
+import { createLogger } from "@/utils/logger";
+
+const logger = createLogger('DealController');
 
 /**
  * Escape special regex characters to prevent ReDoS attacks
@@ -69,7 +72,8 @@ const extractStats = ($topic: cheerio.Cheerio<any>) => {
 
 export const scrapeRedFlagDeals = async () => {
   try {
-    console.log("Scraping RedFlagDeals Trending...");
+    logger.info("Starting RedFlagDeals Trending scrape...");
+    const startTime = Date.now();
 
     const response = await axios.get(LIST_URL, {
       headers: {
@@ -89,7 +93,7 @@ export const scrapeRedFlagDeals = async () => {
     });
 
     if (!response?.data) {
-      console.error("No response data received from RedFlagDeals");
+      logger.error("No response data received from RedFlagDeals");
       return [];
     }
 
@@ -97,9 +101,11 @@ export const scrapeRedFlagDeals = async () => {
 
     const topics = $("ul.topiclist.topics li.topic");
     if (!topics.length) {
-      console.warn("No <li.topic> items found. The site structure may have changed.");
+      logger.warn("No <li.topic> items found. The site structure may have changed.");
       return [];
     }
+
+    logger.debug(`Found ${topics.length} topic items to parse`);
 
     const seen = new Set<string>();
     const scrapedDeals: DealType[] = [];
@@ -159,14 +165,16 @@ export const scrapeRedFlagDeals = async () => {
 
         scrapedDeals.push(deal);
       } catch (err: any) {
-        console.error("Error parsing a topic item:", err?.message || err);
+        logger.debug("Error parsing a topic item:", err?.message || err);
       }
     });
 
     if (!scrapedDeals.length) {
-      console.warn("Parsed zero deals from page.");
+      logger.warn("Parsed zero deals from page.");
       return [];
     }
+
+    logger.debug(`Successfully parsed ${scrapedDeals.length} deals`);
 
     // Upsert in bulk: insert new items, refresh rolling stats on existing
     // Suggestion on your Mongoose schema:
@@ -205,13 +213,14 @@ export const scrapeRedFlagDeals = async () => {
       ? await Deal.find({ _id: { $in: upsertedIds } }).lean()
       : [];
 
-    console.log(
-      `Scraping complete. Parsed ${scrapedDeals.length} topics, inserted ${savedDeals.length}, matched ${result.matchedCount}.`
+    const executionTime = Date.now() - startTime;
+    logger.info(
+      `Scraping complete in ${executionTime}ms. Parsed ${scrapedDeals.length} topics, inserted ${savedDeals.length}, matched ${result.matchedCount}.`
     );
 
     return savedDeals;
   } catch (error: any) {
-    console.error("Error in scrapeRedFlagDeals:", error?.message || error);
+    logger.error("Error in scrapeRedFlagDeals:", error?.message || error);
     throw error;
   }
 };
@@ -220,6 +229,7 @@ export const scrapeRedFlagDeals = async () => {
 
 export const getDeals = async (req: Request, res: Response) => {
   try {
+    logger.debug(`Fetching deals with filters:`, req.query);
     const { category, search, limit, sort, page } = req.query;
 
     const filter: any = {};
@@ -260,6 +270,8 @@ export const getDeals = async (req: Request, res: Response) => {
 
     const deals = await Deal.find(filter).sort(sortOption).skip(skip).limit(limitNum).lean();
 
+    logger.info(`Retrieved ${deals.length} deals for page ${pageNum}`);
+
     res.json({
       success: true,
       page: pageNum,
@@ -267,7 +279,7 @@ export const getDeals = async (req: Request, res: Response) => {
       deals,
     });
   } catch (error: any) {
-    console.error("Error fetching deals:", error);
+    logger.error("Error fetching deals:", error?.message || error);
     res.status(500).json({
       success: false,
       message: "Error fetching deals"
@@ -277,6 +289,7 @@ export const getDeals = async (req: Request, res: Response) => {
 
 export const triggerScrape = async (_req: Request, res: Response) => {
   try {
+    logger.info("Manual scrape triggered");
     const deals = await scrapeRedFlagDeals();
     res.json({
       success: true,
@@ -285,7 +298,7 @@ export const triggerScrape = async (_req: Request, res: Response) => {
       deals,
     });
   } catch (error: any) {
-    console.error("Error triggering scrape:", error);
+    logger.error("Error triggering scrape:", error?.message || error);
     res.status(500).json({
       success: false,
       message: "Error triggering scrape"

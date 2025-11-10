@@ -11,6 +11,12 @@
 # production
 /build
 
+# webpack cache
+/.webpack_cache
+
+# typescript
+.tsbuildinfo
+
 # misc
 .DS_Store
 .env.local

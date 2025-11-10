@@ -3,16 +3,9 @@
   "version": "1.0.0",
   "main": "server.ts",
   "scripts": {
-    "build": "tsc && tsc-alias",
-    "build:client": "cd client && npm run build",
-    "build:all": "npm run build && npm run build:client",
-    "start": "node dist/server.js",
-    "start:prod": "NODE_ENV=production node dist/server.js",
-    "server": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register server.ts",
-    "client": "npm run dev --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "prod": "npm run build:all && npm run start:prod",
-    "create-admin": "ts-node -r tsconfig-paths/register scripts/createAdmin.ts"
+    "dev": "concurrently \"ts-node-dev --respawn --transpile-only -r tsconfig-paths/register server.ts\" \"npm run dev --prefix client\"",
+    "build": "tsc && tsc-alias && cd client && npm run build",
+    "start": "NODE_ENV=production node dist/server.js"
   },
   "keywords": [],
   "author": "",
