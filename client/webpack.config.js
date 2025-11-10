@@ -104,10 +104,7 @@ module.exports = (env, argv) => {
                             '@babel/preset-typescript'
                         ],
                         plugins: [
-                            '@babel/plugin-transform-runtime',
-                            ...(!isDevelopment ? [
-                                ['transform-remove-console', { exclude: ['error', 'warn'] }]
-                            ] : [])
+                            '@babel/plugin-transform-runtime'
                         ]
                     }
                 }
