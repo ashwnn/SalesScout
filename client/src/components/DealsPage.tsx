@@ -51,6 +51,26 @@ const DealsPage: React.FC = () => {
     return { status, color, label, ageInDays: Math.floor(ageInDays) };
   };
 
+  // Format relative time
+  const getRelativeTime = (createdDate: Date) => {
+    const now = new Date();
+    const created = new Date(createdDate);
+    const ageInHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+    const ageInDays = ageInHours / 24;
+    
+    if (ageInHours < 1) {
+      return 'Less than 1 hr ago';
+    } else if (ageInHours < 24) {
+      const hours = Math.floor(ageInHours);
+      return `${hours} ${hours === 1 ? 'hr' : 'hrs'} ago`;
+    } else if (ageInDays < 30) {
+      const days = Math.floor(ageInDays);
+      return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+    } else {
+      return '30+ days ago';
+    }
+  };
+
   // Only fetch deals once when the component mounts
   useEffect(() => {
     getDeals();
@@ -188,6 +208,7 @@ const DealsPage: React.FC = () => {
           <div className="deals-list">
             {sortedDeals.map(deal => {
               const freshness = getFreshnessIndicator(deal.created);
+              const relativeTime = getRelativeTime(deal.created);
               return (
                 <div key={deal.id} className="deal-card">
                   <div className="deal-header">
@@ -196,34 +217,38 @@ const DealsPage: React.FC = () => {
                         {deal.title}
                       </a>
                     </h3>
-                    <span 
-                      className={`freshness-indicator ${freshness.status}`}
-                      style={{ backgroundColor: freshness.color }}
-                      title={`${freshness.label} - ${freshness.ageInDays} day${freshness.ageInDays !== 1 ? 's' : ''} old`}
-                    >
-                      {freshness.label}
-                    </span>
+                    
+                  <div className="deal-date">{relativeTime}</div>
                   </div>
                   
                   <div className="deal-meta">
-                    <div className="deal-date">
-                      Posted {new Date(deal.created).toLocaleDateString()}
+                    <div className="deal-meta-left">
+                      {deal.category && (
+                        <span className="deal-category">{deal.category}</span>
+                      )}
                     </div>
-                    
-                    {deal.category && (
-                      <div className="deal-category">{deal.category}</div>
-                    )}
+                    <div className="deal-meta-right">
+                      <span 
+                        className={`freshness-indicator ${freshness.status}`}
+                        style={{ backgroundColor: freshness.color }}
+                        title={`${freshness.label} - ${freshness.ageInDays} day${freshness.ageInDays !== 1 ? 's' : ''} old`}
+                      >
+                        {freshness.label}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="deal-stats">
                     <span className="stat votes">
-                      <i className="icon-thumbs-up"></i> {deal.votes} votes
+                      <strong>{deal.votes}</strong> votes
                     </span>
+                    <span className="stat-separator">-</span>
                     <span className="stat views">
-                      <i className="icon-eye"></i> {deal.views} views
+                      <strong>{deal.views}</strong> views
                     </span>
+                    <span className="stat-separator">-</span>
                     <span className="stat comments">
-                      <i className="icon-comment"></i> {deal.comments} comments
+                      <strong>{deal.comments}</strong> comments
                     </span>
                   </div>
                   
@@ -231,7 +256,7 @@ const DealsPage: React.FC = () => {
                     href={deal.url}
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="deal-link"
+                    className="deal-link btn btn-primary"
                   >
                     View Deal
                   </a>

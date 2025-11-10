@@ -3,7 +3,7 @@ import api from '@/utils/api';
 import AuthContext from './AuthContext';
 
 interface Query {
-  id: string;
+  _id: string;
   name: string;
   keywords: string[];
   categories?: string[];
@@ -143,7 +143,7 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       if (res.data && res.data.data) {
         setQueries(prevQueries => 
-          prevQueries.map(query => query.id === id ? res.data.data : query)
+          prevQueries.map(query => query._id === id ? res.data.data : query)
         );
         setCurrentQuery(res.data.data);
         setError(null);
@@ -169,9 +169,9 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setLoading(true);
       await api.delete(`/queries/${id}`);
       
-      setQueries(prevQueries => prevQueries.filter(query => query.id !== id));
+      setQueries(prevQueries => prevQueries.filter(query => query._id !== id));
       
-      setCurrentQuery(prev => (prev && prev.id === id) ? null : prev);
+      setCurrentQuery(prev => (prev && prev._id === id) ? null : prev);
       
       setError(null);
       return Promise.resolve();

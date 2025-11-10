@@ -59,11 +59,10 @@ const QueryForm: React.FC = () => {
   const { name, keywordsText, categoriesText, intervalMinutes, webhookUrl, isActive } = formData;
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const value = e.target.type === 'checkbox'
-      ? (e.target as HTMLInputElement).checked
-      : e.target.value;
+    const target = e.target as HTMLInputElement;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
     
-    setFormData({ ...formData, [e.target.name]: value });
+    setFormData({ ...formData, [target.name]: value });
     setError(null);
   };
 
@@ -189,7 +188,7 @@ const QueryForm: React.FC = () => {
   <div className="switch-container">
     <div className="switch-header">
       <label htmlFor="isActive">Active Status</label>
-      <div className="switch">
+      <label className="switch">
         <input
           type="checkbox"
           id="isActive"
@@ -198,7 +197,7 @@ const QueryForm: React.FC = () => {
           onChange={onChange}
         />
         <span className="slider"></span>
-      </div>
+      </label>
     </div>
     <div className="switch-description">
       <small>

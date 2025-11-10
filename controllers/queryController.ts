@@ -136,10 +136,21 @@ export const createQuery = async (req: Request, res: Response): Promise<void> =>
     // Add to scheduler
     addQueryToScheduler(savedQuery as unknown as QueryType);
     
+    const obj: any = savedQuery.toObject();
     res.status(201).json({
       success: true,
       message: 'Query created successfully',
-      data: savedQuery
+      data: {
+        id: obj._id.toString(),
+        name: obj.name,
+        keywords: obj.keywords,
+        categories: obj.categories,
+        intervalMinutes: obj.intervalMinutes,
+        webhookUrl: obj.webhookUrl,
+        isActive: obj.isActive,
+        lastRun: obj.lastRun,
+        nextRun: obj.nextRun
+      }
     });
   } catch (error: any) {
     console.error('Create query error:', error);
@@ -156,10 +167,26 @@ export const getUserQueries = async (req: Request, res: Response): Promise<void>
     const userId = (req as any).user.id;
     const queries = await Query.find({ userId });
     
+    // Manually map to ensure id field is present
+    const queriesWithId = queries.map(q => {
+      const obj: any = q.toObject();
+      return {
+        id: obj._id.toString(),
+        name: obj.name,
+        keywords: obj.keywords,
+        categories: obj.categories,
+        intervalMinutes: obj.intervalMinutes,
+        webhookUrl: obj.webhookUrl,
+        isActive: obj.isActive,
+        lastRun: obj.lastRun,
+        nextRun: obj.nextRun
+      };
+    });
+    
     res.json({
       success: true,
-      count: queries.length,
-      data: queries
+      count: queriesWithId.length,
+      data: queriesWithId
     });
   } catch (error: any) {
     res.status(500).json({ 
@@ -188,9 +215,20 @@ export const getQuery = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
+    const obj: any = query.toObject();
     res.json({
       success: true,
-      data: query
+      data: {
+        id: obj._id.toString(),
+        name: obj.name,
+        keywords: obj.keywords,
+        categories: obj.categories,
+        intervalMinutes: obj.intervalMinutes,
+        webhookUrl: obj.webhookUrl,
+        isActive: obj.isActive,
+        lastRun: obj.lastRun,
+        nextRun: obj.nextRun
+      }
     });
   } catch (error: any) {
     res.status(500).json({ 
@@ -263,12 +301,25 @@ export const updateQuery = async (req: Request, res: Response): Promise<void> =>
     // Update scheduler
     if (query) {
       addQueryToScheduler(query as unknown as QueryType);
+      
+      const obj: any = query.toObject();
+      res.json({
+        success: true,
+        data: {
+          id: obj._id.toString(),
+          name: obj.name,
+          keywords: obj.keywords,
+          categories: obj.categories,
+          intervalMinutes: obj.intervalMinutes,
+          webhookUrl: obj.webhookUrl,
+          isActive: obj.isActive,
+          lastRun: obj.lastRun,
+          nextRun: obj.nextRun
+        }
+      });
+    } else {
+      res.status(404).json({ success: false, message: 'Query not found after update' });
     }
-    
-    res.json({
-      success: true,
-      data: query
-    });
   } catch (error: any) {
     res.status(500).json({ 
       success: false, 

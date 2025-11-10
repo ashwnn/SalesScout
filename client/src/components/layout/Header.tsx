@@ -41,10 +41,10 @@ const Header: React.FC = () => {
                   </div>
                   <ul className="dropdown-menu">
                     <li>
-                      <Link to="/profile">Profile</Link>
+                      <Link to="/profile" className="dropdown-item">Profile</Link>
                     </li>
                     <li>
-                      <button onClick={handleLogout} className="logout-btn">
+                      <button onClick={handleLogout} className="dropdown-item logout-btn">
                         Logout
                       </button>
                     </li>

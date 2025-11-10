@@ -97,10 +97,10 @@ const QueryList: React.FC = () => {
     return (
       <div className="queries-list">
         {filteredQueries().map(query => (
-          <div key={query.id} className="query-card">
+          <div key={query._id} className="query-card">
             <div className="query-header">
               <h3>
-                <Link to={`/queries/${query.id}`}>{query.name}</Link>
+                <Link to={`/queries/${query._id}`}>{query.name}</Link>
               </h3>
               <span className={`status-badge ${query.isActive ? 'active' : 'inactive'}`}>
                 {query.isActive ? 'Active' : 'Inactive'}
@@ -129,18 +129,15 @@ const QueryList: React.FC = () => {
             </div>
             
             <div className="query-actions">
-              <Link to={`/queries/${query.id}`} className="btn btn-secondary">
-                View Details
-              </Link>
-              <Link to={`/queries/${query.id}/edit`} className="btn btn-secondary">
+              <Link to={`/queries/${query._id}/edit`} className="btn btn-secondary">
                 Edit
               </Link>
               <button 
-                onClick={() => handleDelete(query.id)} 
+                onClick={() => handleDelete(query._id)} 
                 className="btn btn-danger"
-                disabled={isDeleting === query.id}
+                disabled={isDeleting === query._id}
               >
-                {isDeleting === query.id ? 'Deleting...' : 'Delete'}
+                {isDeleting === query._id ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

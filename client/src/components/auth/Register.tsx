@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
+import api from '@/utils/api';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,8 @@ const Register: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationDisabled, setRegistrationDisabled] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
   
   const { register, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -20,6 +23,30 @@ const Register: React.FC = () => {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
+
+  // Check if registration is enabled
+  useEffect(() => {
+    const checkRegistrationStatus = async () => {
+      try {
+        // Make a test request to check registration status
+        await api.post('/users/register', {
+          username: '__CHECK__',
+          email: '__CHECK__@test.com',
+          password: '__CHECK__'
+        });
+      } catch (err: any) {
+        // If we get a 404, registration is disabled
+        if (err.response?.status === 404) {
+          setRegistrationDisabled(true);
+        }
+        // Other errors (400, etc.) mean registration is enabled but validation failed
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+
+    checkRegistrationStatus();
+  }, []);
   
   const { username, email, password, confirmPassword } = formData;
   
@@ -41,11 +68,44 @@ const Register: React.FC = () => {
       await register(username, email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+      if (err.response?.status === 404) {
+        setRegistrationDisabled(true);
+        setError('Registration is currently disabled by the administrator.');
+      } else {
+        setError(err.response?.data?.message || 'Registration failed');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (checkingStatus) {
+    return (
+      <div className="auth-page register-page">
+        <div className="auth-container">
+          <div className="loading-indicator">Checking registration status...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (registrationDisabled) {
+    return (
+      <div className="auth-page register-page">
+        <div className="auth-container">
+          <h1>Registration Disabled</h1>
+          <div className="alert alert-danger" style={{ marginTop: '1rem' }}>
+            Registration is currently disabled by the administrator. Please contact the administrator if you need access.
+          </div>
+          <div className="auth-redirect" style={{ marginTop: '1.5rem' }}>
+            <p>
+              Already have an account? <Link to="/login">Login</Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page register-page">

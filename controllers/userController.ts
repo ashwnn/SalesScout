@@ -58,9 +58,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Check if registration is enabled
     const registrationEnabled = process.env.ALLOW_REGISTRATION === 'true';
+    console.log('Registration enabled:', registrationEnabled);
     
     if (!registrationEnabled) {
-      res.status(403).json({ 
+      res.status(404).json({ 
         success: false, 
         message: 'Registration is currently disabled. Please contact the administrator.' 
       });

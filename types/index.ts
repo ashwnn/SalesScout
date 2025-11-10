@@ -16,7 +16,7 @@ export type DealType = {
   }
   
   export type QueryType = {
-    id: string;
+    _id: string;
     name: string;
     keywords: string[];
     categories?: string[];

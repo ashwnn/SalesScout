@@ -68,7 +68,6 @@ const Dashboard: React.FC = () => {
     <div className="dashboard-page">
       <div className="dashboard-header">
         <h1>Welcome back, {user?.username}!</h1>
-        <p>Here's what's happening with your sales scout</p>
       </div>
       
       <div className="dashboard-stats">
@@ -83,6 +82,15 @@ const Dashboard: React.FC = () => {
           <div className="stat-value">{deals.length}</div>
           <Link to="/deals" className="stat-link">View All Deals</Link>
         </div>
+      </div>
+
+      <div className="dashboard-actions">
+        <Link to="/queries/new" className="btn btn-primary">
+          Create New Query
+        </Link>
+        <Link to="/deals" className="btn btn-secondary">
+          Browse Deals
+        </Link>
       </div>
       
       <div className="dashboard-recent">
@@ -134,8 +142,8 @@ const Dashboard: React.FC = () => {
           ) : queries.length > 0 ? (
             <ul className="recent-queries-list">
               {queries.slice(0, 5).map(query => (
-                <li key={query.id} className="query-item">
-                  <Link to={`/queries/${query.id}`} className="query-link">
+                <li key={query._id} className="query-item">
+                  <Link to={`/queries/${query._id}`} className="query-link">
                     <span className="query-name">{query.name}</span>
                     <span className={`query-status ${query.isActive ? 'active' : 'inactive'}`}>
                       {query.isActive ? 'Active' : 'Inactive'}
@@ -154,14 +162,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
       
-      <div className="dashboard-actions">
-        <Link to="/queries/new" className="btn btn-primary">
-          Create New Query
-        </Link>
-        <Link to="/deals" className="btn btn-secondary">
-          Browse Deals
-        </Link>
-      </div>
+      
     </div>
   );
 };
