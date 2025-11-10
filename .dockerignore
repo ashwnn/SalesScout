@@ -10,6 +10,12 @@ dist
 build
 client/build
 
+# Data directories (MongoDB, volumes, etc.)
+data
+db
+mongodb_data
+*.db
+
 # Development files
 .git
 .gitignore
