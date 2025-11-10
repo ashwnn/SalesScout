@@ -16,7 +16,7 @@ import helmet from 'helmet';
 dotenv.config();
 
 const app = express();
-const PORT: number | string = process.env.PORT || 3311;
+const PORT: number | string = process.env.BACKEND_PORT || process.env.PORT || 3311;
 
 // Security Middleware
 app.use(helmet({
@@ -49,13 +49,9 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // CORS Configuration
-const allowedOrigins = [
-  'http://localhost:3005',
-  'http://localhost:3000',
-  // Add your production URLs from environment variables
-  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
-  ...(process.env.PRODUCTION_URL ? [process.env.PRODUCTION_URL] : [])
-].filter(Boolean);
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS 
+  ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(url => url.trim())
+  : ['http://localhost:3005', 'http://localhost:3000', 'http://localhost:1533'];
 
 app.use(cors({
   origin: (origin, callback) => {

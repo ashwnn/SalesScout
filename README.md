@@ -103,18 +103,29 @@ docker-compose up -d
 Create a `.env` file with the following required variables:
 
 ```env
-NODE_ENV=production
-PORT=3311
+# Port Configuration
+BACKEND_PORT=1534
+FRONTEND_PORT=1533
+MONGO_PORT=27017
+
+# API & CORS Configuration
+REACT_APP_API_URL=http://localhost:1534
+CORS_ALLOWED_ORIGINS=http://localhost:3005,http://localhost:3000,http://localhost:1533,https://bomboclatt.ashwin.lol
+
+# MongoDB Configuration
 MONGO_ROOT_USERNAME=admin
 MONGO_ROOT_PASSWORD=<your-password>
 MONGO_DB_NAME=redflagdeals
+
+# Security
 JWT_SECRET=<your-secret>
-FRONTEND_URL=http://localhost:3311
+
+# Application Settings
 ALLOW_REGISTRATION=false
 DEMO_MODE=true
 ```
 
-See `.env.example` for complete configuration options.
+See `.env.example` for complete configuration options including analytics and rate limiting.
 
 ### Analytics Setup (Optional)
 
