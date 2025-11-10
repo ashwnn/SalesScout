@@ -46,7 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(res.data.user);
           setIsAuthenticated(true);
         } catch (err) {
-          console.error('Error loading user', err);
           localStorage.removeItem('token');
           api.setAuthToken(null);
           setIsAuthenticated(false);
@@ -72,7 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       setIsAuthenticated(true);
     } catch (err) {
-      console.error('Login error:', err);
       throw err;
     }
   };
@@ -89,7 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       setIsAuthenticated(true);
     } catch (err) {
-      console.error('Registration error:', err);
       throw err;
     }
   };
@@ -107,7 +104,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await api.put('/users/profile', userData);
       setUser(res.data.user);
     } catch (err) {
-      console.error('Update profile error:', err);
       throw err;
     }
   };

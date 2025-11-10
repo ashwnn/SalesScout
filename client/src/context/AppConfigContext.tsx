@@ -34,7 +34,6 @@ export const AppConfigProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setConfig(response.data.config);
         }
       } catch (error) {
-        console.error('Error fetching app config:', error);
         // Keep default values on error
       } finally {
         setLoading(false);

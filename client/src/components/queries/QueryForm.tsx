@@ -28,7 +28,6 @@ const QueryForm: React.FC = () => {
         try {
           await getQuery(id);
         } catch (err) {
-          console.error('Failed to load query:', err);
           navigate('/queries');
         }
       };
@@ -103,7 +102,6 @@ const QueryForm: React.FC = () => {
 
       navigate('/queries');
     } catch (err: any) {
-      console.error('Error saving query:', err);
       setError(err.response?.data?.message || 'Error saving query. Please try again.');
     } finally {
       setIsSubmitting(false);

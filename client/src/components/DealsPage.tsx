@@ -95,7 +95,7 @@ const DealsPage: React.FC = () => {
     try {
       await scrapeFreshDeals();
     } catch (err) {
-      console.error('Error scraping fresh deals:', err);
+      // Error is handled by context
     } finally {
       setIsRefreshing(false);
     }

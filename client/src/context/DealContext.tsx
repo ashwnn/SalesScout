@@ -65,7 +65,6 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      console.error('Error fetching deals:', err);
       setError(err.response?.data?.message || 'Error fetching deals');
     } finally {
       setLoading(false);
@@ -111,7 +110,6 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      console.error('Error scraping fresh deals:', err);
       setError(err.response?.data?.message || 'Error scraping fresh deals');
     } finally {
       setLoading(false);

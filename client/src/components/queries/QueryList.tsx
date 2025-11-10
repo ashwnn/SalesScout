@@ -40,7 +40,7 @@ const QueryList: React.FC = () => {
       try {
         await deleteQuery(id);
       } catch (error) {
-        console.error('Error deleting query:', error);
+        // Error is handled by context
       } finally {
         setIsDeleting(null);
       }

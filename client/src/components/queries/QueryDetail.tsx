@@ -112,7 +112,7 @@ const QueryDetail: React.FC = () => {
         isActive: !currentQuery.isActive
       });
     } catch (error) {
-      console.error('Error updating query status:', error);
+      // Error is handled by context
     } finally {
       setIsProcessing(false);
     }
@@ -127,7 +127,7 @@ const QueryDetail: React.FC = () => {
         await deleteQuery(id!);
         navigate('/queries');
       } catch (error) {
-        console.error('Error deleting query:', error);
+        // Error is handled by context
         setIsProcessing(false);
       }
     }

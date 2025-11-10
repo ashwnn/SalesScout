@@ -65,7 +65,6 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error fetching queries');
-      console.error('Error fetching queries:', err);
     } finally {
       setLoading(false);
       isFetching.current = false;
@@ -87,7 +86,6 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error fetching query details');
-      console.error('Error fetching query details:', err);
     } finally {
       setLoading(false);
       isFetching.current = false;
@@ -125,7 +123,6 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Error creating query';
       setError(errorMessage);
-      console.error('Error creating query:', err);
       return Promise.reject(err);
     } finally {
       setLoading(false);
@@ -153,7 +150,6 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Error updating query';
       setError(errorMessage);
-      console.error('Error updating query:', err);
       return Promise.reject(err);
     } finally {
       setLoading(false);
@@ -178,7 +174,6 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Error deleting query';
       setError(errorMessage);
-      console.error('Error deleting query:', err);
       return Promise.reject(err);
     } finally {
       setLoading(false);
