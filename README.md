@@ -110,7 +110,7 @@ MONGO_PORT=27017
 
 # API & CORS Configuration
 REACT_APP_API_URL=http://localhost:1534
-CORS_ALLOWED_ORIGINS=http://localhost:3005,http://localhost:3000,http://localhost:1533,https://bomboclatt.ashwin.lol
+CORS_ALLOWED_ORIGINS=http://localhost:3005,http://localhost:3000,http://localhost:1533
 
 # MongoDB Configuration
 MONGO_ROOT_USERNAME=admin
