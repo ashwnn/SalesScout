@@ -86,11 +86,11 @@ class UmamiAnalytics {
 
   constructor() {
     this.config = {
-      enabled: process.env.REACT_APP_UMAMI_ENABLED === 'true',
-      src: process.env.REACT_APP_UMAMI_SRC || '',
-      websiteId: process.env.REACT_APP_UMAMI_WEBSITE_ID || '',
-      autoTrack: process.env.REACT_APP_UMAMI_AUTO_TRACK !== 'false',
-      debug: process.env.REACT_APP_UMAMI_DEBUG === 'true',
+      enabled: true,
+      src: 'https://bomboclatt.ashwin.lol/script.js',
+      websiteId: 'c957042a-2f48-4945-a3f2-042c7d4162cc',
+      autoTrack: true,
+      debug: false,
     };
   }
 
