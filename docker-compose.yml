@@ -35,13 +35,13 @@ services:
     env_file:
       - .env
     ports:
-      - "${PORT:-3311}:3311"
+      - "1534:3311"
     environment:
       NODE_ENV: production
-      PORT: ${PORT:-3311}
+      PORT: 3311
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-admin123}@mongodb:27017/${MONGO_DB_NAME:-redflagdeals}?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:1533}
       PRODUCTION_URL: ${PRODUCTION_URL:-}
       ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
       DEMO_MODE: ${DEMO_MODE:-true}
@@ -70,7 +70,7 @@ services:
       context: ./client
       dockerfile: Dockerfile.frontend
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3311}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:1534}
         - REACT_APP_UMAMI_ENABLED=${REACT_APP_UMAMI_ENABLED:-true}
         - REACT_APP_UMAMI_SRC=${REACT_APP_UMAMI_SRC:-https://umami.bepo.ca/script.js}
         - REACT_APP_UMAMI_WEBSITE_ID=${REACT_APP_UMAMI_WEBSITE_ID:-c957042a-2f48-4945-a3f2-042c7d4162cc}
