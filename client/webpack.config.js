@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 const dotenv = require('dotenv');
 
@@ -170,8 +171,21 @@ module.exports = (env, argv) => {
             inject: true,
         }),
         new webpack.DefinePlugin({
+            ...envKeys,
             'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'http://localhost:3311'),
             'process.env.NODE_ENV': JSON.stringify(isDevelopment ? 'development' : 'production'),
+        }),
+        // Copy public assets to build folder
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: 'public',
+                    to: '',
+                    globOptions: {
+                        ignore: ['**/index.html'], // Don't copy index.html as HtmlWebpackPlugin handles it
+                    },
+                },
+            ],
         }),
         // Production-only optimizations
         ...(!isDevelopment ? [
