@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import QueryContext from '@/context/QueryContext';
+import { trackQuery } from '@/utils/umami';
 import '@/styles/query.css';
 
 const QueryForm: React.FC = () => {
@@ -96,8 +97,10 @@ const QueryForm: React.FC = () => {
 
       if (isEditMode && currentQuery) {
         await updateQuery(id, queryData);
+        trackQuery('updated', id, { name, keywordsCount: keywords.length });
       } else {
         await createQuery(queryData);
+        trackQuery('created', undefined, { name, keywordsCount: keywords.length });
       }
 
       navigate('/queries');

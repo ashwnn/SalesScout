@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
 import AppConfigContext from '@/context/AppConfigContext';
+import { trackAuth } from '@/utils/umami';
 import '@/styles/header.css'
 
 const Header: React.FC = () => {
@@ -10,6 +11,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    trackAuth('logout', true, { username: user?.username });
     logout();
     navigate('/login');
   };

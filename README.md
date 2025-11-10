@@ -20,6 +20,7 @@ A full-stack TypeScript application for tracking and monitoring deals from onlin
 - Demo mode with read-only access
 - Security middleware (Helmet, CORS, request size limits)
 - Scheduled background jobs for deal updates
+- Privacy-focused analytics with Umami (optional, configurable via `.env`)
 
 ## API Routes
 
@@ -114,6 +115,16 @@ DEMO_MODE=true
 ```
 
 See `.env.example` for complete configuration options.
+
+### Analytics Setup (Optional)
+
+SalesScout includes Umami analytics for tracking user behavior and application performance. To enable:
+
+1. Add Umami configuration to your `.env` file (see `.env.example` for all options)
+2. Set `REACT_APP_UMAMI_ENABLED=true`
+3. Configure your Umami script URL and website ID
+
+See [UMAMI_QUICKSTART.md](./UMAMI_QUICKSTART.md) for detailed setup instructions, or [UMAMI_ANALYTICS.md](./UMAMI_ANALYTICS.md) for complete documentation.
 
 ### Docker Commands
 

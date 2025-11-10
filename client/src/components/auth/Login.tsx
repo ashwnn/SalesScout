@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
 import AppConfigContext from '@/context/AppConfigContext';
+import { trackAuth } from '@/utils/umami';
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -34,9 +35,11 @@ const Login: React.FC = () => {
     setIsSubmitting(true);
     try {
       await login(username, password);
+      trackAuth('login', true, { username, method: 'form' });
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid credentials');
+      trackAuth('login', false, { username, error: err.response?.data?.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -47,9 +50,11 @@ const Login: React.FC = () => {
     setError(null);
     try {
       await login('demo', 'Demo1234!');
+      trackAuth('login', true, { username: 'demo', method: 'demo-button' });
       navigate('/dashboard');
     } catch (err: any) {
       setError('Demo account is not available');
+      trackAuth('login', false, { username: 'demo', error: 'demo-unavailable' });
     } finally {
       setIsSubmitting(false);
     }

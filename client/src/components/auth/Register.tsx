@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
 import api from '@/utils/api';
+import { trackAuth } from '@/utils/umami';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -66,13 +67,16 @@ const Register: React.FC = () => {
     setIsSubmitting(true);
     try {
       await register(username, email, password);
+      trackAuth('register', true, { username });
       navigate('/dashboard');
     } catch (err: any) {
       if (err.response?.status === 404) {
         setRegistrationDisabled(true);
         setError('Registration is currently disabled by the administrator.');
+        trackAuth('register', false, { username, error: 'registration-disabled' });
       } else {
         setError(err.response?.data?.message || 'Registration failed');
+        trackAuth('register', false, { username, error: err.response?.data?.message });
       }
     } finally {
       setIsSubmitting(false);

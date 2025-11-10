@@ -24,7 +24,16 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: [
+        "'self'", 
+        // Allow Umami analytics script
+        "https://umami.bepo.ca"
+      ],
+      connectSrc: [
+        "'self'",
+        // Allow Umami analytics data collection
+        "https://umami.bepo.ca"
+      ],
       imgSrc: ["'self'", 'data:', 'https:'],
     },
   },

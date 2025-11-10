@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
 import DealContext from '@/context/DealContext';
+import { trackDeal, trackInteraction } from '@/utils/umami';
 import '@/styles/deals.css';
 
 const DealsPage: React.FC = () => {
@@ -83,6 +84,14 @@ const DealsPage: React.FC = () => {
       searchTerm, 
       selectedCategory === 'all' ? undefined : selectedCategory
     );
+    
+    // Track filter application
+    if (searchTerm || selectedCategory !== 'all') {
+      trackDeal('filtered', {
+        searchTerm: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+      });
+    }
   }, [searchTerm, selectedCategory, filterDeals]);
 
   // Apply filters whenever filter criteria change, but not on every render
@@ -92,6 +101,7 @@ const DealsPage: React.FC = () => {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    trackInteraction('button-click', { button: 'refresh-deals' });
     try {
       await scrapeFreshDeals();
     } catch (err) {
@@ -103,12 +113,14 @@ const DealsPage: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    trackDeal('searched', { searchTerm });
     applyFilters();
   };
 
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedCategory('all');
+    trackInteraction('button-click', { button: 'reset-filters' });
     // Don't call filterDeals directly here
     // It will be called by the useEffect when state changes
   };
@@ -172,7 +184,13 @@ const DealsPage: React.FC = () => {
             </div>
             
             <div className="sort-filter">
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <select 
+                value={sortBy} 
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  trackDeal('sorted', { sortBy: e.target.value });
+                }}
+              >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
                 <option value="most_votes">Most Votes</option>
@@ -213,7 +231,16 @@ const DealsPage: React.FC = () => {
                 <div key={deal.id} className="deal-card">
                   <div className="deal-header">
                     <h3 className="deal-title">
-                      <a href={deal.url} target="_blank" rel="noopener noreferrer">
+                      <a 
+                        href={deal.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={() => trackDeal('clicked', { 
+                          dealTitle: deal.title, 
+                          category: deal.category,
+                          url: deal.url 
+                        })}
+                      >
                         {deal.title}
                       </a>
                     </h3>
@@ -257,6 +284,10 @@ const DealsPage: React.FC = () => {
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="deal-link btn btn-primary"
+                    onClick={() => trackDeal('external-link', { 
+                      dealTitle: deal.title, 
+                      category: deal.category 
+                    })}
                   >
                     View Deal
                   </a>

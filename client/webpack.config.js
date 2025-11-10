@@ -4,11 +4,22 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const webpack = require('webpack');
 const dotenv = require('dotenv');
 
-const env = dotenv.config().parsed || {};
-const envKeys = Object.keys(env).reduce((prev, next) => {
-    prev[`process.env.${next}`] = JSON.stringify(env[next]);
-    return prev;
-}, {});
+// Load environment variables from parent directory
+const env = dotenv.config({ path: path.resolve(__dirname, '../.env') }).parsed || {};
+
+// Also try loading from the client directory
+const clientEnv = dotenv.config().parsed || {};
+
+// Merge both, with client env taking precedence
+const mergedEnv = { ...env, ...clientEnv };
+
+// Filter to only include REACT_APP_ prefixed variables for client
+const envKeys = Object.keys(mergedEnv)
+    .filter(key => key.startsWith('REACT_APP_'))
+    .reduce((prev, next) => {
+        prev[`process.env.${next}`] = JSON.stringify(mergedEnv[next]);
+        return prev;
+    }, {});
 
 module.exports = (env, argv) => {
     const isDevelopment = argv.mode === 'development';
