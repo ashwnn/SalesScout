@@ -76,7 +76,6 @@ interface UmamiConfig {
   enabled: boolean;
   src: string;
   websiteId: string;
-  domains?: string;
   autoTrack: boolean;
   debug: boolean;
 }
@@ -90,7 +89,6 @@ class UmamiAnalytics {
       enabled: process.env.REACT_APP_UMAMI_ENABLED === 'true',
       src: process.env.REACT_APP_UMAMI_SRC || '',
       websiteId: process.env.REACT_APP_UMAMI_WEBSITE_ID || '',
-      domains: process.env.REACT_APP_UMAMI_DOMAINS,
       autoTrack: process.env.REACT_APP_UMAMI_AUTO_TRACK !== 'false',
       debug: process.env.REACT_APP_UMAMI_DEBUG === 'true',
     };
@@ -118,9 +116,6 @@ class UmamiAnalytics {
       script.src = this.config.src;
       script.setAttribute('data-website-id', this.config.websiteId);
       
-      if (this.config.domains) {
-        script.setAttribute('data-domains', this.config.domains);
-      }
       
       if (!this.config.autoTrack) {
         script.setAttribute('data-auto-track', 'false');
@@ -132,7 +127,6 @@ class UmamiAnalytics {
       if (this.config.debug) {
         console.log('[Umami] Analytics initialized successfully', {
           websiteId: this.config.websiteId,
-          domains: this.config.domains,
           autoTrack: this.config.autoTrack,
         });
       }
