@@ -136,21 +136,10 @@ export const createQuery = async (req: Request, res: Response): Promise<void> =>
     // Add to scheduler
     addQueryToScheduler(savedQuery as unknown as QueryType);
     
-    const obj: any = savedQuery.toObject();
     res.status(201).json({
       success: true,
       message: 'Query created successfully',
-      data: {
-        id: obj._id.toString(),
-        name: obj.name,
-        keywords: obj.keywords,
-        categories: obj.categories,
-        intervalMinutes: obj.intervalMinutes,
-        webhookUrl: obj.webhookUrl,
-        isActive: obj.isActive,
-        lastRun: obj.lastRun,
-        nextRun: obj.nextRun
-      }
+      data: savedQuery
     });
   } catch (error: any) {
     console.error('Create query error:', error);
@@ -167,28 +156,14 @@ export const getUserQueries = async (req: Request, res: Response): Promise<void>
     const userId = (req as any).user.id;
     const queries = await Query.find({ userId });
     
-    // Manually map to ensure id field is present
-    const queriesWithId = queries.map(q => {
-      const obj: any = q.toObject();
-      return {
-        id: obj._id.toString(),
-        name: obj.name,
-        keywords: obj.keywords,
-        categories: obj.categories,
-        intervalMinutes: obj.intervalMinutes,
-        webhookUrl: obj.webhookUrl,
-        isActive: obj.isActive,
-        lastRun: obj.lastRun,
-        nextRun: obj.nextRun
-      };
-    });
-    
+    // Return queries as-is (MongoDB will include _id)
     res.json({
       success: true,
-      count: queriesWithId.length,
-      data: queriesWithId
+      count: queries.length,
+      data: queries
     });
   } catch (error: any) {
+    console.error('Error fetching queries:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching queries'
@@ -215,20 +190,9 @@ export const getQuery = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    const obj: any = query.toObject();
     res.json({
       success: true,
-      data: {
-        id: obj._id.toString(),
-        name: obj.name,
-        keywords: obj.keywords,
-        categories: obj.categories,
-        intervalMinutes: obj.intervalMinutes,
-        webhookUrl: obj.webhookUrl,
-        isActive: obj.isActive,
-        lastRun: obj.lastRun,
-        nextRun: obj.nextRun
-      }
+      data: query
     });
   } catch (error: any) {
     res.status(500).json({ 
@@ -302,20 +266,9 @@ export const updateQuery = async (req: Request, res: Response): Promise<void> =>
     if (query) {
       addQueryToScheduler(query as unknown as QueryType);
       
-      const obj: any = query.toObject();
       res.json({
         success: true,
-        data: {
-          id: obj._id.toString(),
-          name: obj.name,
-          keywords: obj.keywords,
-          categories: obj.categories,
-          intervalMinutes: obj.intervalMinutes,
-          webhookUrl: obj.webhookUrl,
-          isActive: obj.isActive,
-          lastRun: obj.lastRun,
-          nextRun: obj.nextRun
-        }
+        data: query
       });
     } else {
       res.status(404).json({ success: false, message: 'Query not found after update' });

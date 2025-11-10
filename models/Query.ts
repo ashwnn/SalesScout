@@ -54,8 +54,8 @@ const querySchema = new Schema({
   toJSON: {
     virtuals: true,
     transform: function(_doc, ret) {
-      ret.id = ret._id.toString();
-      delete ret._id;
+      // Convert _id ObjectId to string and keep it as _id
+      ret._id = ret._id.toString();
       delete ret.__v;
       return ret;
     }
@@ -63,8 +63,8 @@ const querySchema = new Schema({
   toObject: {
     virtuals: true,
     transform: function(_doc, ret) {
-      ret.id = ret._id.toString();
-      delete ret._id;
+      // Convert _id ObjectId to string and keep it as _id
+      ret._id = ret._id.toString();
       delete ret.__v;
       return ret;
     }

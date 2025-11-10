@@ -1,10 +1,12 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
+import AppConfigContext from '@/context/AppConfigContext';
 import '@/styles/header.css'
 
 const Header: React.FC = () => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
+  const { config } = useContext(AppConfigContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -57,9 +59,11 @@ const Header: React.FC = () => {
               <li>
                 <Link to="/login">Login</Link>
               </li>
-              <li>
-                <Link to="/register">Register</Link>
-              </li>
+              {!config.demoMode && (
+                <li>
+                  <Link to="/register">Register</Link>
+                </li>
+              )}
             </ul>
           )}
         </nav>

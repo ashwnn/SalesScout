@@ -1,9 +1,12 @@
 import express from 'express';
-import { register, login, getProfile, registerValidation, loginValidation } from '../controllers/userController';
+import { register, login, getProfile, getAppConfig, registerValidation, loginValidation } from '../controllers/userController';
 import { protect } from '../middleware/auth';
 import { authRateLimiter, apiRateLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
+
+// Public routes
+router.get('/config', getAppConfig); // No rate limit for config endpoint
 
 // Public routes with strict rate limiting for authentication
 router.post('/register', authRateLimiter, registerValidation, register);

@@ -9,12 +9,14 @@ import {
 } from '../controllers/queryController';
 import { protect } from '../middleware/auth';
 import { apiRateLimiter } from '../middleware/rateLimiter';
+import { preventDemoActions } from '../middleware/demoMode';
 
 const router = express.Router();
 
 // All query routes are protected and rate limited
 router.use(protect);
 router.use(apiRateLimiter);
+router.use(preventDemoActions);
 
 router.route('/')
   .post(createQueryValidation, createQuery)

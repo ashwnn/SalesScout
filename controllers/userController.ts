@@ -157,14 +157,37 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        isDemo: user.isDemo || false
       }
     });
   } catch (error: any) {
-    console.error('Login error:', error);
+    console.error('Get profile error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Error logging in'
+      message: 'Error fetching profile'
+    });
+  }
+};
+
+// Get app configuration (public endpoint)
+export const getAppConfig = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const demoMode = process.env.DEMO_MODE === 'true';
+    const registrationEnabled = process.env.ALLOW_REGISTRATION === 'true';
+    
+    res.json({
+      success: true,
+      config: {
+        demoMode,
+        registrationEnabled
+      }
+    });
+  } catch (error: any) {
+    console.error('Get app config error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching app configuration'
     });
   }
 };
@@ -188,6 +211,7 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
         id: user.id,
         username: user.username,
         email: user.email,
+        isDemo: user.isDemo || false,
         createdAt: user.createdAt
       }
     });

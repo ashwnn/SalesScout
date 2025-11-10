@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import DemoBanner from '@/components/DemoBanner';
 import Login from '@/components/auth/Login';
 import Register from '@/components/auth/Register';
 import Dashboard from '@/components/dashboard/Dashboard';
@@ -17,31 +18,34 @@ import { QueryProvider } from '@/context/QueryContext';
 import { DealProvider } from '@/context/DealContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { AppConfigProvider } from '@/context/AppConfigContext';
 
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
         <ToastProvider>
-          <Router>
-            <AuthProvider>
-              <QueryProvider>
-                <DealProvider>
-                  <div className="app">
-                    <Header />
-                    <main className="container">
-                      <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route 
-                          path="/dashboard" 
-                          element={
-                            <ProtectedRoute>
-                              <Dashboard />
-                            </ProtectedRoute>
-                          } 
-                        />
+          <AppConfigProvider>
+            <Router>
+              <AuthProvider>
+                <QueryProvider>
+                  <DealProvider>
+                    <div className="app">
+                      <Header />
+                      <DemoBanner />
+                      <main className="container">
+                        <Routes>
+                          <Route path="/" element={<Navigate to="/dashboard" />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/register" element={<Register />} />
+                          <Route 
+                            path="/dashboard" 
+                            element={
+                              <ProtectedRoute>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            } 
+                          />
                         <Route 
                           path="/queries" 
                           element={
@@ -99,6 +103,7 @@ function App() {
               </QueryProvider>
             </AuthProvider>
           </Router>
+          </AppConfigProvider>
         </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>

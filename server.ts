@@ -5,6 +5,7 @@ import userRoutes from '@/routes/userRoutes';
 import queryRoutes from '@/routes/queryRoutes';
 import { initializeScheduler } from '@/services/schedulerService';
 import { scrapeRedFlagDeals } from '@/controllers/dealController';
+import { createDemoUser } from '@/scripts/createDemoUser';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -149,6 +150,9 @@ const startServer = async () => {
     // Connect to database
     await connectDB();
     console.log('Database connected successfully');
+
+    // Create demo user if demo mode is enabled
+    await createDemoUser();
 
     // Initialize scheduler
     await initializeScheduler();

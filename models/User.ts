@@ -5,6 +5,7 @@ export interface UserType extends Document {
   username: string;
   email: string;
   password: string;
+  isDemo: boolean;
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -28,6 +29,10 @@ const userSchema = new Schema({
     type: String,
     required: true,
     minlength: 6
+  },
+  isDemo: {
+    type: Boolean,
+    default: false
   },
   createdAt: {
     type: Date,

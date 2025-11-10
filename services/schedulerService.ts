@@ -14,7 +14,7 @@ export const initializeScheduler = async (): Promise<void> => {
     activeQueries.forEach(query => {
       addQueryToScheduler({
         ...query.toObject(),
-        id: (query as any)._id.toString()
+        _id: (query as any)._id.toString()
       } as QueryType);
     });
 
@@ -26,14 +26,14 @@ export const initializeScheduler = async (): Promise<void> => {
 
 export const addQueryToScheduler = (query: QueryType): void => {
   // Clear existing job if present
-  if (activeJobs[query.id]) {
-    clearTimeout(activeJobs[query.id]);
-    delete activeJobs[query.id];
+  if (activeJobs[query._id]) {
+    clearTimeout(activeJobs[query._id]);
+    delete activeJobs[query._id];
   }
 
   // Skip scheduling if query is inactive
   if (!query.isActive) {
-    console.log(`Query ${query.id} is inactive, not scheduling`);
+    console.log(`Query ${query._id} is inactive, not scheduling`);
     return;
   }
 
@@ -47,10 +47,10 @@ export const addQueryToScheduler = (query: QueryType): void => {
     delay = 0;
   }
 
-  console.log(`Scheduling query ${query.id} to run in ${Math.round(delay / 1000 / 60)} minutes`);
+  console.log(`Scheduling query ${query._id} to run in ${Math.round(delay / 1000 / 60)} minutes`);
 
   // Schedule the job
-  activeJobs[query.id] = setTimeout(() => executeQuery(query.id), delay);
+  activeJobs[query._id] = setTimeout(() => executeQuery(query._id), delay);
 };
 
 // Execute a scheduled query
@@ -107,7 +107,7 @@ const executeQuery = async (queryId: string): Promise<void> => {
       try {
         await axios.post(query.webhookUrl, {
           queryName: query.name,
-          queryId: query.id,
+          queryId: query._id,
           matchCount: matchingDeals.length,
           matches: matchingDeals.map(deal => ({
             id: deal.id,
@@ -139,7 +139,7 @@ const executeQuery = async (queryId: string): Promise<void> => {
     const nextRun = new Date();
     nextRun.setMinutes(nextRun.getMinutes() + query.intervalMinutes);
 
-    await Query.findByIdAndUpdate(query.id, {
+    await Query.findByIdAndUpdate(query._id, {
       lastRun: now,
       nextRun: nextRun
     });
@@ -147,6 +147,7 @@ const executeQuery = async (queryId: string): Promise<void> => {
     // Re-schedule the query for its next run
     addQueryToScheduler({
       ...query.toObject(),
+      _id: (query as any)._id.toString(),
       lastRun: now,
       nextRun: nextRun
     } as QueryType);
@@ -161,12 +162,13 @@ const executeQuery = async (queryId: string): Promise<void> => {
         const nextRun = new Date();
         nextRun.setMinutes(nextRun.getMinutes() + query.intervalMinutes);
 
-        await Query.findByIdAndUpdate(query.id, {
+        await Query.findByIdAndUpdate(query._id, {
           nextRun
         });
 
         addQueryToScheduler({
           ...query.toObject(),
+          _id: (query as any)._id.toString(),
           nextRun
         } as QueryType);
       }
