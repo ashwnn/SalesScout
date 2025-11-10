@@ -68,8 +68,7 @@ module.exports = {
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
-            template: './public/index.html',
-            favicon: './public/favicon.ico'
+            template: './public/index.html'
         }),
         new webpack.DefinePlugin({
             'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'http://localhost:3311')

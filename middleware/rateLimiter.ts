@@ -12,11 +12,7 @@ export const authRateLimiter = rateLimit({
     message: 'Too many authentication attempts, please try again later.'
   },
   standardHeaders: true,
-  legacyHeaders: false,
-  // Use a more sophisticated key generator
-  keyGenerator: (req) => {
-    return req.ip || req.socket.remoteAddress || 'unknown';
-  }
+  legacyHeaders: false
 });
 
 /**
@@ -30,10 +26,7 @@ export const apiRateLimiter = rateLimit({
     message: 'Too many requests, please try again later.'
   },
   standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.socket.remoteAddress || 'unknown';
-  }
+  legacyHeaders: false
 });
 
 /**
@@ -47,9 +40,6 @@ export const strictRateLimiter = rateLimit({
     message: 'Too many scraping requests, please try again later.'
   },
   standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.socket.remoteAddress || 'unknown';
-  }
+  legacyHeaders: false
 });
 
