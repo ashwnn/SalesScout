@@ -62,11 +62,11 @@ services:
     volumes:
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3311/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "sh", "-c", "curl -fsS http://localhost:${BACKEND_PORT:-1534}/api/health >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
 
   # Frontend service
   frontend:
