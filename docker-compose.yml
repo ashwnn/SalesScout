@@ -51,7 +51,7 @@ services:
       context: ./client
       dockerfile: Dockerfile.frontend
       args:
-        REACT_APP_API_URL: "http://localhost:${BACKEND_PORT}"
+        REACT_APP_API_URL: "${REACT_APP_API_URL}"
     container_name: sales-scout-frontend
     ports:
       - "${FRONTEND_PORT}:8080"

@@ -11,8 +11,8 @@ RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts
 # Copy source code
 COPY . .
 
-# Accept build argument for API URL (only env var actually used in the app)
-ARG REACT_APP_API_URL=http://localhost:3311
+# Accept build argument for API URL (will be passed from docker-compose.yml)
+ARG REACT_APP_API_URL
 
 # Set environment variable for build
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
@@ -38,4 +38,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
 
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
-
