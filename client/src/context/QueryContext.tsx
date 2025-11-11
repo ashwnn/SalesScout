@@ -64,7 +64,21 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setError(null);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error fetching queries');
+      let errorMessage = 'Error fetching queries. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
       isFetching.current = false;
@@ -85,7 +99,23 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setError(null);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error fetching query details');
+      let errorMessage = 'Error fetching query details. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Query not found. It may have been deleted.';
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        errorMessage = 'You do not have permission to view this query.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
       isFetching.current = false;
@@ -121,7 +151,22 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       return Promise.resolve();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error creating query';
+      let errorMessage = 'Error creating query. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response?.data?.message || 'Invalid query data. Please check your input and try again.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'You do not have permission to create queries.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
       setError(errorMessage);
       return Promise.reject(err);
     } finally {
@@ -148,7 +193,24 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       return Promise.resolve();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error updating query';
+      let errorMessage = 'Error updating query. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response?.data?.message || 'Invalid query data. Please check your input and try again.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Query not found. It may have been deleted.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'You do not have permission to update this query.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
       setError(errorMessage);
       return Promise.reject(err);
     } finally {
@@ -172,7 +234,22 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setError(null);
       return Promise.resolve();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error deleting query';
+      let errorMessage = 'Error deleting query. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Query not found. It may have already been deleted.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'You do not have permission to delete this query.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
       setError(errorMessage);
       return Promise.reject(err);
     } finally {

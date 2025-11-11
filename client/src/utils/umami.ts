@@ -24,6 +24,8 @@ export enum UmamiEventCategory {
   USER_INTERACTION = 'user-interaction',
   ERROR = 'error',
   PERFORMANCE = 'performance',
+  DEMO = 'demo',
+  BUTTON = 'button',
 }
 
 // Common event names
@@ -289,6 +291,48 @@ class UmamiAnalytics {
   }
 
   /**
+   * Track demo mode specific events
+   */
+  trackDemoMode(
+    action: string,
+    properties?: Record<string, any>
+  ): void {
+    this.trackEvent(UmamiEventCategory.DEMO, action, {
+      timestamp: new Date().toISOString(),
+      mode: 'demo',
+      ...properties,
+    });
+  }
+
+  /**
+   * Track button clicks with specific button identifiers
+   */
+  trackButton(
+    buttonName: string,
+    properties?: Record<string, any>
+  ): void {
+    this.trackEvent(UmamiEventCategory.BUTTON, 'click', {
+      button: buttonName,
+      timestamp: new Date().toISOString(),
+      ...properties,
+    });
+  }
+
+  /**
+   * Track user session info (demo vs regular)
+   */
+  trackSession(
+    sessionType: 'demo' | 'regular',
+    properties?: Record<string, any>
+  ): void {
+    this.track('session-start', {
+      sessionType,
+      timestamp: new Date().toISOString(),
+      ...properties,
+    });
+  }
+
+  /**
    * Check if analytics is enabled
    */
   isEnabled(): boolean {
@@ -315,5 +359,8 @@ export const trackDeal = umami.trackDeal.bind(umami);
 export const trackError = umami.trackError.bind(umami);
 export const trackPerformance = umami.trackPerformance.bind(umami);
 export const trackInteraction = umami.trackInteraction.bind(umami);
+export const trackDemoMode = umami.trackDemoMode.bind(umami);
+export const trackButton = umami.trackButton.bind(umami);
+export const trackSession = umami.trackSession.bind(umami);
 
 export default umami;

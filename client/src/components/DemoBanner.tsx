@@ -1,13 +1,31 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
+import { trackDemoMode, trackButton } from '@/utils/umami';
 
 const DemoBanner: React.FC = () => {
   const { user } = useContext(AuthContext);
 
+  // Track demo banner view
+  useEffect(() => {
+    if (user?.isDemo) {
+      trackDemoMode('banner-shown', { username: user.username });
+    }
+  }, [user]);
+
   if (!user?.isDemo) {
     return null;
   }
+
+  const handleCreateAccountClick = () => {
+    trackDemoMode('create-account-click', { 
+      source: 'demo-banner',
+      username: user.username 
+    });
+    trackButton('demo-banner-create-account', {
+      sessionType: 'demo'
+    });
+  };
 
   return (
     <div style={{
@@ -23,6 +41,7 @@ const DemoBanner: React.FC = () => {
       You are using a <strong>demo account</strong>. Changes cannot be saved.{' '}
       <Link 
         to="/register" 
+        onClick={handleCreateAccountClick}
         style={{ 
           color: '#b45309', 
           textDecoration: 'underline',

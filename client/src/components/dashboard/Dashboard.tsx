@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
 import QueryContext from '@/context/QueryContext';
 import DealContext from '@/context/DealContext';
+import { trackButton, trackDemoMode } from '@/utils/umami';
 import '@/styles/dashboard.css'
 
 const Dashboard: React.FC = () => {
@@ -64,6 +65,18 @@ const Dashboard: React.FC = () => {
     .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
     .slice(0, 5);
 
+  const handleButtonClick = (buttonName: string, destination?: string) => {
+    trackButton(buttonName, {
+      sessionType: user?.isDemo ? 'demo' : 'regular',
+      destination,
+      from: 'dashboard'
+    });
+    
+    if (user?.isDemo) {
+      trackDemoMode(`click-${buttonName}`, { destination });
+    }
+  };
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">
@@ -74,21 +87,41 @@ const Dashboard: React.FC = () => {
         <div className="stat-card">
           <h3>Active Queries</h3>
           <div className="stat-value">{activeQueries}</div>
-          <Link to="/queries" className="stat-link">View All Queries</Link>
+          <Link 
+            to="/queries" 
+            className="stat-link"
+            onClick={() => handleButtonClick('view-all-queries', '/queries')}
+          >
+            View All Queries
+          </Link>
         </div>
         
         <div className="stat-card">
           <h3>Total Deals</h3>
           <div className="stat-value">{deals.length}</div>
-          <Link to="/deals" className="stat-link">View All Deals</Link>
+          <Link 
+            to="/deals" 
+            className="stat-link"
+            onClick={() => handleButtonClick('view-all-deals', '/deals')}
+          >
+            View All Deals
+          </Link>
         </div>
       </div>
 
       <div className="dashboard-actions">
-        <Link to="/queries/new" className="btn btn-primary">
+        <Link 
+          to="/queries/new" 
+          className="btn btn-primary"
+          onClick={() => handleButtonClick('create-new-query', '/queries/new')}
+        >
           Create New Query
         </Link>
-        <Link to="/deals" className="btn btn-secondary">
+        <Link 
+          to="/deals" 
+          className="btn btn-secondary"
+          onClick={() => handleButtonClick('browse-deals', '/deals')}
+        >
           Browse Deals
         </Link>
       </div>
@@ -105,7 +138,21 @@ const Dashboard: React.FC = () => {
                 return (
                   <li key={deal.id} className="recent-deal-item">
                     <div className="deal-title">
-                      <a href={deal.url} target="_blank" rel="noopener noreferrer">
+                      <a 
+                        href={deal.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          trackButton('deal-external-link', {
+                            sessionType: user?.isDemo ? 'demo' : 'regular',
+                            dealId: deal.id,
+                            from: 'dashboard'
+                          });
+                          if (user?.isDemo) {
+                            trackDemoMode('click-deal-link', { dealId: deal.id });
+                          }
+                        }}
+                      >
                         {deal.title}
                       </a>
                       <span 
@@ -130,9 +177,18 @@ const Dashboard: React.FC = () => {
               })}
             </ul>
           ) : (
-            <p className="empty-message">No deals found. <Link to="/deals">Scrape for deals</Link></p>
+            <p className="empty-message">No deals found. <Link 
+              to="/deals"
+              onClick={() => handleButtonClick('scrape-deals-empty-state', '/deals')}
+            >Scrape for deals</Link></p>
           )}
-          <Link to="/deals" className="view-all-link">View All Deals</Link>
+          <Link 
+            to="/deals" 
+            className="view-all-link"
+            onClick={() => handleButtonClick('view-all-deals-recent', '/deals')}
+          >
+            View All Deals
+          </Link>
         </div>
         
         <div className="recent-section">
@@ -143,7 +199,11 @@ const Dashboard: React.FC = () => {
             <ul className="recent-queries-list">
               {queries.slice(0, 5).map(query => (
                 <li key={query._id} className="query-item">
-                  <Link to={`/queries/${query._id}`} className="query-link">
+                  <Link 
+                    to={`/queries/${query._id}`} 
+                    className="query-link"
+                    onClick={() => handleButtonClick('view-query-detail', `/queries/${query._id}`)}
+                  >
                     <span className="query-name">{query.name}</span>
                     <span className={`query-status ${query.isActive ? 'active' : 'inactive'}`}>
                       {query.isActive ? 'Active' : 'Inactive'}
@@ -156,9 +216,18 @@ const Dashboard: React.FC = () => {
               ))}
             </ul>
           ) : (
-            <p className="empty-message">No queries created. <Link to="/queries/new">Create your first query</Link></p>
+            <p className="empty-message">No queries created. <Link 
+              to="/queries/new"
+              onClick={() => handleButtonClick('create-first-query-empty-state', '/queries/new')}
+            >Create your first query</Link></p>
           )}
-          <Link to="/queries" className="view-all-link">Manage Queries</Link>
+          <Link 
+            to="/queries" 
+            className="view-all-link"
+            onClick={() => handleButtonClick('manage-queries', '/queries')}
+          >
+            Manage Queries
+          </Link>
         </div>
       </div>
       

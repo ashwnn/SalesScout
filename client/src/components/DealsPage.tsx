@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
 import DealContext from '@/context/DealContext';
-import { trackDeal, trackInteraction } from '@/utils/umami';
+import AuthContext from '@/context/AuthContext';
+import { trackDeal, trackInteraction, trackButton, trackDemoMode } from '@/utils/umami';
 import '@/styles/deals.css';
 
 const DealsPage: React.FC = () => {
   const { deals, filteredDeals, loading, error, getDeals, scrapeFreshDeals, filterDeals } = useContext(DealContext);
+  const { user } = useContext(AuthContext);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -102,6 +104,13 @@ const DealsPage: React.FC = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     trackInteraction('button-click', { button: 'refresh-deals' });
+    trackButton('refresh-deals', {
+      sessionType: user?.isDemo ? 'demo' : 'regular',
+      from: 'deals-page'
+    });
+    if (user?.isDemo) {
+      trackDemoMode('refresh-deals');
+    }
     try {
       await scrapeFreshDeals();
     } catch (err) {
@@ -114,6 +123,13 @@ const DealsPage: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     trackDeal('searched', { searchTerm });
+    trackButton('search-deals', {
+      sessionType: user?.isDemo ? 'demo' : 'regular',
+      searchTerm
+    });
+    if (user?.isDemo) {
+      trackDemoMode('search-deals', { searchTerm });
+    }
     applyFilters();
   };
 
@@ -121,6 +137,12 @@ const DealsPage: React.FC = () => {
     setSearchTerm('');
     setSelectedCategory('all');
     trackInteraction('button-click', { button: 'reset-filters' });
+    trackButton('reset-filters', {
+      sessionType: user?.isDemo ? 'demo' : 'regular'
+    });
+    if (user?.isDemo) {
+      trackDemoMode('reset-filters');
+    }
     // Don't call filterDeals directly here
     // It will be called by the useEffect when state changes
   };
@@ -173,7 +195,16 @@ const DealsPage: React.FC = () => {
             <div className="category-filter">
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  trackButton('filter-category', {
+                    sessionType: user?.isDemo ? 'demo' : 'regular',
+                    category: e.target.value
+                  });
+                  if (user?.isDemo) {
+                    trackDemoMode('filter-category', { category: e.target.value });
+                  }
+                }}
               >
                 {categories.map(category => (
                   <option key={category} value={category}>
@@ -189,6 +220,13 @@ const DealsPage: React.FC = () => {
                 onChange={(e) => {
                   setSortBy(e.target.value);
                   trackDeal('sorted', { sortBy: e.target.value });
+                  trackButton('sort-deals', {
+                    sessionType: user?.isDemo ? 'demo' : 'regular',
+                    sortBy: e.target.value
+                  });
+                  if (user?.isDemo) {
+                    trackDemoMode('sort-deals', { sortBy: e.target.value });
+                  }
                 }}
               >
                 <option value="newest">Newest First</option>

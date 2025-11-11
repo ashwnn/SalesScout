@@ -60,7 +60,7 @@ const Register: React.FC = () => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Passwords do not match. Please ensure both password fields are identical.');
       return;
     }
     
@@ -70,12 +70,28 @@ const Register: React.FC = () => {
       trackAuth('register', true, { username });
       navigate('/dashboard');
     } catch (err: any) {
+      // Handle different error scenarios with user-friendly messages
+      let errorMessage = 'Registration failed. Please try again.';
+      
       if (err.response?.status === 404) {
         setRegistrationDisabled(true);
-        setError('Registration is currently disabled by the administrator.');
+        errorMessage = 'Registration is currently disabled by the administrator.';
         trackAuth('register', false, { username, error: 'registration-disabled' });
-      } else {
-        setError(err.response?.data?.message || 'Registration failed');
+      } else if (err.response?.status === 429) {
+        errorMessage = 'Too many registration attempts. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 400) {
+        // Use the backend validation message if available
+        errorMessage = err.response?.data?.message || 'Invalid input. Please check your information and try again.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
+      if (err.response?.status !== 404) {
         trackAuth('register', false, { username, error: err.response?.data?.message });
       }
     } finally {

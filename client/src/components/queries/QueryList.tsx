@@ -1,11 +1,14 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import QueryContext from '@/context/QueryContext';
+import AuthContext from '@/context/AuthContext';
+import { trackButton, trackDemoMode, trackQuery } from '@/utils/umami';
 import '@/styles/query.css';
 
 const QueryList: React.FC = () => {
   // Use the context
   const { queries, loading: contextLoading, error: contextError, getQueries, deleteQuery } = useContext(QueryContext);
+  const { user } = useContext(AuthContext);
   
   // Component state
   const [filter, setFilter] = useState('all');
@@ -37,10 +40,24 @@ const QueryList: React.FC = () => {
     
     if (window.confirm('Are you sure you want to delete this query?')) {
       setIsDeleting(id);
+      trackButton('delete-query', {
+        sessionType: user?.isDemo ? 'demo' : 'regular',
+        queryId: id
+      });
+      trackQuery('deleted', id);
+      if (user?.isDemo) {
+        trackDemoMode('delete-query-attempt', { queryId: id });
+      }
       try {
         await deleteQuery(id);
+        if (user?.isDemo) {
+          trackDemoMode('delete-query-success', { queryId: id });
+        }
       } catch (error) {
         // Error is handled by context
+        if (user?.isDemo) {
+          trackDemoMode('delete-query-failed', { queryId: id });
+        }
       } finally {
         setIsDeleting(null);
       }
@@ -129,7 +146,19 @@ const QueryList: React.FC = () => {
             </div>
             
             <div className="query-actions">
-              <Link to={`/queries/${query._id}/edit`} className="btn btn-secondary">
+              <Link 
+                to={`/queries/${query._id}/edit`} 
+                className="btn btn-secondary"
+                onClick={() => {
+                  trackButton('edit-query', {
+                    sessionType: user?.isDemo ? 'demo' : 'regular',
+                    queryId: query._id
+                  });
+                  if (user?.isDemo) {
+                    trackDemoMode('edit-query-click', { queryId: query._id });
+                  }
+                }}
+              >
                 Edit
               </Link>
               <button 
@@ -150,7 +179,19 @@ const QueryList: React.FC = () => {
     <div className="queries-page">
       <div className="page-header">
         <h1>Your Queries</h1>
-        <Link to="/queries/new" className="btn btn-primary">
+        <Link 
+          to="/queries/new" 
+          className="btn btn-primary"
+          onClick={() => {
+            trackButton('create-new-query-header', {
+              sessionType: user?.isDemo ? 'demo' : 'regular',
+              from: 'query-list'
+            });
+            if (user?.isDemo) {
+              trackDemoMode('create-query-click', { from: 'query-list-header' });
+            }
+          }}
+        >
           Create New Query
         </Link>
       </div>
@@ -158,19 +199,37 @@ const QueryList: React.FC = () => {
       <div className="filter-controls">
         <button
           className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-          onClick={() => setFilter('all')}
+          onClick={() => {
+            setFilter('all');
+            trackButton('filter-queries', {
+              sessionType: user?.isDemo ? 'demo' : 'regular',
+              filter: 'all'
+            });
+          }}
         >
           All ({queries.length})
         </button>
         <button
           className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
-          onClick={() => setFilter('active')}
+          onClick={() => {
+            setFilter('active');
+            trackButton('filter-queries', {
+              sessionType: user?.isDemo ? 'demo' : 'regular',
+              filter: 'active'
+            });
+          }}
         >
           Active ({activeCount})
         </button>
         <button
           className={`filter-btn ${filter === 'inactive' ? 'active' : ''}`}
-          onClick={() => setFilter('inactive')}
+          onClick={() => {
+            setFilter('inactive');
+            trackButton('filter-queries', {
+              sessionType: user?.isDemo ? 'demo' : 'regular',
+              filter: 'inactive'
+            });
+          }}
         >
           Inactive ({inactiveCount})
         </button>

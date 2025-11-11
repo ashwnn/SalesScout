@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import api from '@/utils/api';
+import { trackSession } from '@/utils/umami';
 
 interface User {
   id: string;
@@ -45,6 +46,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const res = await api.get('/users/profile');
           setUser(res.data.user);
           setIsAuthenticated(true);
+          
+          // Track session type when user loads
+          trackSession(
+            res.data.user.isDemo ? 'demo' : 'regular',
+            { 
+              username: res.data.user.username,
+              source: 'token-load'
+            }
+          );
         } catch (err) {
           localStorage.removeItem('token');
           api.setAuthToken(null);
@@ -70,6 +80,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       setUser(userData);
       setIsAuthenticated(true);
+      
+      // Track session type on login
+      trackSession(
+        userData.isDemo ? 'demo' : 'regular',
+        { 
+          username: userData.username,
+          source: 'login',
+          isDemo: userData.isDemo || false
+        }
+      );
     } catch (err) {
       throw err;
     }
@@ -86,6 +106,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       setUser(userData);
       setIsAuthenticated(true);
+      
+      // Track session type on registration
+      trackSession(
+        'regular',
+        { 
+          username: userData.username,
+          source: 'register'
+        }
+      );
     } catch (err) {
       throw err;
     }

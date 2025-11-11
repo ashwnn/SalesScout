@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '@/context/AuthContext';
 import AppConfigContext from '@/context/AppConfigContext';
-import { trackAuth } from '@/utils/umami';
+import { trackAuth, trackButton } from '@/utils/umami';
 import '@/styles/header.css'
 
 const Header: React.FC = () => {
@@ -12,8 +12,19 @@ const Header: React.FC = () => {
 
   const handleLogout = () => {
     trackAuth('logout', true, { username: user?.username });
+    trackButton('logout', {
+      sessionType: user?.isDemo ? 'demo' : 'regular'
+    });
     logout();
     navigate('/login');
+  };
+
+  const handleNavClick = (destination: string) => {
+    trackButton(`nav-${destination}`, {
+      sessionType: user?.isDemo ? 'demo' : 'regular',
+      from: window.location.pathname,
+      destination
+    });
   };
 
   return (
@@ -30,13 +41,13 @@ const Header: React.FC = () => {
             <>
               <ul className="nav-links">
                 <li>
-                  <Link to="/dashboard">Dashboard</Link>
+                  <Link to="/dashboard" onClick={() => handleNavClick('dashboard')}>Dashboard</Link>
                 </li>
                 <li>
-                  <Link to="/deals">Deals</Link>
+                  <Link to="/deals" onClick={() => handleNavClick('deals')}>Deals</Link>
                 </li>
                 <li>
-                  <Link to="/queries">Queries</Link>
+                  <Link to="/queries" onClick={() => handleNavClick('queries')}>Queries</Link>
                 </li>
                 <li className="dropdown">
                   <div className="dropdown-toggle">
@@ -45,7 +56,7 @@ const Header: React.FC = () => {
                   </div>
                   <ul className="dropdown-menu">
                     <li>
-                      <Link to="/profile" className="dropdown-item">Profile</Link>
+                      <Link to="/profile" className="dropdown-item" onClick={() => handleNavClick('profile')}>Profile</Link>
                     </li>
                     <li>
                       <button onClick={handleLogout} className="dropdown-item logout-btn">
@@ -59,11 +70,11 @@ const Header: React.FC = () => {
           ) : (
             <ul className="nav-links">
               <li>
-                <Link to="/login">Login</Link>
+                <Link to="/login" onClick={() => handleNavClick('login')}>Login</Link>
               </li>
               {!config.demoMode && (
                 <li>
-                  <Link to="/register">Register</Link>
+                  <Link to="/register" onClick={() => handleNavClick('register')}>Register</Link>
                 </li>
               )}
             </ul>

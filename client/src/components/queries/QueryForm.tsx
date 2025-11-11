@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import QueryContext from '@/context/QueryContext';
-import { trackQuery } from '@/utils/umami';
+import AuthContext from '@/context/AuthContext';
+import { trackQuery, trackButton, trackDemoMode } from '@/utils/umami';
 import '@/styles/query.css';
 
 const QueryForm: React.FC = () => {
@@ -10,6 +11,7 @@ const QueryForm: React.FC = () => {
   
   const navigate = useNavigate();
   const { createQuery, updateQuery, getQuery, currentQuery, clearCurrentQuery } = useContext(QueryContext);
+  const { user } = useContext(AuthContext);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -98,14 +100,46 @@ const QueryForm: React.FC = () => {
       if (isEditMode && currentQuery) {
         await updateQuery(id, queryData);
         trackQuery('updated', id, { name, keywordsCount: keywords.length });
+        trackButton('update-query', {
+          sessionType: user?.isDemo ? 'demo' : 'regular',
+          queryId: id,
+          keywordsCount: keywords.length
+        });
+        if (user?.isDemo) {
+          trackDemoMode('update-query', { queryId: id });
+        }
       } else {
         await createQuery(queryData);
         trackQuery('created', undefined, { name, keywordsCount: keywords.length });
+        trackButton('create-query', {
+          sessionType: user?.isDemo ? 'demo' : 'regular',
+          keywordsCount: keywords.length
+        });
+        if (user?.isDemo) {
+          trackDemoMode('create-query', { name, keywordsCount: keywords.length });
+        }
       }
 
       navigate('/queries');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error saving query. Please try again.');
+      // Handle different error scenarios with user-friendly messages
+      let errorMessage = 'Error saving query. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response?.data?.message || 'Invalid input. Please check your query details and try again.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'You do not have permission to perform this action.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

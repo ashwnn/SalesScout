@@ -37,7 +37,22 @@ const Profile: React.FC = () => {
       await updateProfile({ username, email });
       setSuccess('Profile updated successfully');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      // Handle different error scenarios with user-friendly messages
+      let errorMessage = 'Failed to update profile. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many update attempts. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response?.data?.message || 'Invalid input. Please check your information and try again.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

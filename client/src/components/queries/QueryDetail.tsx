@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import QueryContext from '@/context/QueryContext';
 import DealContext from '@/context/DealContext';
+import AuthContext from '@/context/AuthContext';
+import { trackButton, trackDemoMode, trackQuery } from '@/utils/umami';
 import '@/styles/query.css';
 import '@/styles/deals.css';
 
@@ -11,6 +13,7 @@ const QueryDetail: React.FC = () => {
   
   const { getQuery, currentQuery, updateQuery, deleteQuery, loading: queryLoading } = useContext(QueryContext);
   const { deals, loading: dealsLoading } = useContext(DealContext);
+  const { user } = useContext(AuthContext);
   
   // Use component state to track if a deletion or update is in progress
   const [isProcessing, setIsProcessing] = useState(false);
@@ -107,9 +110,19 @@ const QueryDetail: React.FC = () => {
     if (!currentQuery || isProcessing) return;
     
     setIsProcessing(true);
+    const newStatus = !currentQuery.isActive;
+    trackButton('toggle-query-status', {
+      sessionType: user?.isDemo ? 'demo' : 'regular',
+      queryId: id,
+      newStatus
+    });
+    trackQuery('updated', id, { isActive: newStatus });
+    if (user?.isDemo) {
+      trackDemoMode('toggle-query-status', { queryId: id, newStatus });
+    }
     try {
       await updateQuery(id!, {
-        isActive: !currentQuery.isActive
+        isActive: newStatus
       });
     } catch (error) {
       // Error is handled by context
@@ -123,6 +136,14 @@ const QueryDetail: React.FC = () => {
     
     if (window.confirm('Are you sure you want to delete this query?')) {
       setIsProcessing(true);
+      trackButton('delete-query-detail', {
+        sessionType: user?.isDemo ? 'demo' : 'regular',
+        queryId: id
+      });
+      trackQuery('deleted', id);
+      if (user?.isDemo) {
+        trackDemoMode('delete-query-detail', { queryId: id });
+      }
       try {
         await deleteQuery(id!);
         navigate('/queries');

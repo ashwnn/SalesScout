@@ -65,7 +65,21 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error fetching deals');
+      let errorMessage = 'Error fetching deals. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
       isFetching.current = false;
@@ -110,7 +124,21 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Invalid response format');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error scraping fresh deals');
+      let errorMessage = 'Error scraping fresh deals. Please try again.';
+      
+      if (err.response?.status === 429) {
+        errorMessage = 'Too many scraping requests. Please wait a few minutes before trying again.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'You do not have permission to scrape deals.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        errorMessage = 'Scraping timeout. The operation took too long. Please try again.';
+      } else if (!err.response) {
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
       isFetching.current = false;
