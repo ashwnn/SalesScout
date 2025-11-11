@@ -9,6 +9,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
       - mongo_data:/data/db
+    networks:
+      - apps
     healthcheck:
       test: ["CMD", "mongosh", "--username", "${MONGO_ROOT_USERNAME}", "--password", "${MONGO_ROOT_PASSWORD}", "--eval", "db.adminCommand('ping')"]
       interval: 5s
@@ -40,6 +42,8 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+    networks:
+      - apps
     healthcheck:
       test: ["CMD", "true"]
       interval: 5s
@@ -58,11 +62,17 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - apps
     healthcheck:
       test: ["CMD", "true"]
       interval: 5s
       timeout: 3s
       retries: 1
+
+networks:
+  apps:
+    external: true
 
 volumes:
   mongo_data:
