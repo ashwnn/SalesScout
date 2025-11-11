@@ -1,110 +1,68 @@
 services:
-  # MongoDB service
-  mongodb:
-    image: mongo:7.0
-    container_name: sales-scout-mongodb
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin123}
-      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-redflagdeals}
+  mongo:
+    image: mongo:6
+    container_name: mongo
     ports:
-      - "${MONGO_PORT:-27017}:27017"
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
-      - mongodb_data:/data/db
-      - mongodb_config:/data/configdb
-    networks:
-      - salesscout-internal
-      - apps
+      - mongo_data:/data/db
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
+      test: ["CMD", "mongosh", "--username", "${MONGO_ROOT_USERNAME}", "--password", "${MONGO_ROOT_PASSWORD}", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
       timeout: 5s
-      retries: 5
-      start_period: 40s
+      retries: 10
 
-  # Backend API service
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: sales-scout-backend
-    restart: unless-stopped
-    env_file:
-      - .env
-    ports:
-      - "${BACKEND_PORT:-1534}:3311"
+    container_name: backend
+    env_file: .env
     environment:
-      NODE_ENV: production
-      # App listens on 3311 inside the container
-      PORT: 3311
-      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-admin123}@mongodb:27017/${MONGO_DB_NAME:-redflagdeals}?authSource=admin
-      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
-      # Optional frontend URLs; keep defaults sensible for local dev
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:1533}
-      PRODUCTION_URL: ${PRODUCTION_URL:-https://ss.ashwin.lol}
-      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
-      DEMO_MODE: ${DEMO_MODE:-true}
-      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
-      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
-      RATE_LIMIT_MAX_AUTH: ${RATE_LIMIT_MAX_AUTH:-5}
-      RATE_LIMIT_MAX_SCRAPE: ${RATE_LIMIT_MAX_SCRAPE:-3}
-      # Pass CORS origins from .env
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      PORT: "${BACKEND_PORT}"
+      BACKEND_PORT: "${BACKEND_PORT}"
+      MONGO_URI: "mongodb://admin:${MONGO_ROOT_PASSWORD}@mongo:${MONGO_PORT:-27017}/${MONGO_DB_NAME}?authSource=admin"
+      JWT_SECRET: "${JWT_SECRET}"
+      ALLOW_REGISTRATION: "${ALLOW_REGISTRATION}"
+      DEMO_MODE: "${DEMO_MODE}"
+      RATE_LIMIT_WINDOW_MS: "${RATE_LIMIT_WINDOW_MS}"
+      RATE_LIMIT_MAX_REQUESTS: "${RATE_LIMIT_MAX_REQUESTS}"
+      RATE_LIMIT_MAX_AUTH: "${RATE_LIMIT_MAX_AUTH}"
+      RATE_LIMIT_MAX_SCRAPE: "${RATE_LIMIT_MAX_SCRAPE}"
+      ADMIN_EMAIL: "${ADMIN_EMAIL}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      ADMIN_NAME: "${ADMIN_NAME}"
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     depends_on:
-      mongodb:
+      mongo:
         condition: service_healthy
-    networks:
-      - salesscout-internal
-      - apps
-    volumes:
-      - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -fsS http://localhost:${BACKEND_PORT:-1534}/api/health >/dev/null"]
+      test: ["CMD", "sh", "-c", "curl -fsS http://localhost:${BACKEND_PORT:-1534}/api/health >/dev/null || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
 
-
-  # Frontend service
   frontend:
     build:
       context: ./client
       dockerfile: Dockerfile.frontend
       args:
-        # Use API URL from .env directly
-        - REACT_APP_API_URL=${REACT_APP_API_URL}
-        - REACT_APP_UMAMI_ENABLED=${REACT_APP_UMAMI_ENABLED:-true}
-        - REACT_APP_UMAMI_SRC=${REACT_APP_UMAMI_SRC:-https://umami.bepo.ca/script.js}
-        - REACT_APP_UMAMI_WEBSITE_ID=${REACT_APP_UMAMI_WEBSITE_ID:-c957042a-2f48-4945-a3f2-042c7d4162cc}
-        - REACT_APP_UMAMI_AUTO_TRACK=${REACT_APP_UMAMI_AUTO_TRACK:-true}
-        - REACT_APP_UMAMI_DEBUG=${REACT_APP_UMAMI_DEBUG:-false}
-    container_name: sales-scout-frontend
-    restart: unless-stopped
+        REACT_APP_API_URL: "http://localhost:${BACKEND_PORT}"
+    container_name: frontend
     ports:
-      - "${FRONTEND_PORT:-1533}:80"
-    networks:
-      - apps
+      - "${FRONTEND_PORT}:8080"
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-networks:
-  apps:
-    external: true
-  salesscout-internal:
-    driver: bridge
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
-  mongodb_data:
-    driver: local
-  mongodb_config:
-    driver: local
+  mongo_data:

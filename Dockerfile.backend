@@ -8,8 +8,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production --ignore-scripts
+# Install dependencies with cache mount for faster rebuilds
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --only=production --ignore-scripts
 
 # Build stage
 FROM base AS builder
@@ -18,8 +19,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies)
-RUN npm ci --ignore-scripts
+# Install all dependencies (including dev dependencies) with cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --ignore-scripts
 
 # Copy source code
 COPY . .
@@ -31,7 +33,9 @@ RUN npm run build -- --ignore-scripts || (npm run build:backend || npx tsc)
 FROM base AS runner
 WORKDIR /app
 
+ARG BACKEND_PORT=3311
 ENV NODE_ENV=production
+ENV BACKEND_PORT=${BACKEND_PORT}
 
 # Install wget for healthcheck
 RUN apk add --no-cache wget
@@ -49,12 +53,12 @@ COPY --from=deps --chown=salesscout:nodejs /app/node_modules ./node_modules
 
 USER salesscout
 
-# Expose the API port
-EXPOSE 3311
+# Expose the API port (configurable via build arg)
+EXPOSE ${BACKEND_PORT}
 
-# Health check
+# Health check using env-configured port
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
-  CMD wget --spider -q http://localhost:3311/api/health || exit 1
+  CMD wget --spider -q http://localhost:${BACKEND_PORT}/api/health || exit 1
 
-# Start the backend
+# Start the backend directly with node so signals are handled properly
 CMD ["node", "dist/server.js"]

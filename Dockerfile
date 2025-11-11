@@ -9,9 +9,11 @@ WORKDIR /app
 COPY package*.json ./
 COPY client/package*.json ./client/
 
-# Install dependencies
-RUN npm ci --only=production --ignore-scripts
-RUN cd client && npm ci --only=production --ignore-scripts
+# Install dependencies with cache mount for faster rebuilds
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --only=production --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm \
+    cd client && npm ci --only=production --ignore-scripts
 
 # Development dependencies for building
 FROM base AS builder
@@ -21,9 +23,11 @@ WORKDIR /app
 COPY package*.json ./
 COPY client/package*.json ./client/
 
-# Install all dependencies (including dev dependencies)
-RUN npm ci --ignore-scripts
-RUN cd client && npm ci --ignore-scripts
+# Install all dependencies (including dev dependencies) with cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm \
+    cd client && npm ci --ignore-scripts
 
 # Copy source code
 COPY . .
@@ -68,5 +72,5 @@ EXPOSE 3311
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD node -e "require('http').get('http://localhost:3311/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
 
-# Start the application (Build + Run in Production)
-CMD ["npm", "start"]
+# Start the application directly with node for proper signal handling
+CMD ["node", "dist/server.js"]

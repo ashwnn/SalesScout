@@ -1,3 +1,19 @@
+node_modules
+client/node_modules
+dist
+build
+.env
+.env.*
+.git
+*.log
+npm-debug.log*
+Dockerfile*
+docker-compose.yml
+.vscode
+.idea
+coverage
+/.webpack_cache
+client/.webpack_cache
 # Node modules
 node_modules
 client/node_modules

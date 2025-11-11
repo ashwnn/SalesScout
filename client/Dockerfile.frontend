@@ -2,41 +2,26 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better cache utilization
 COPY package*.json ./
 
-# Install dependencies (use install instead of ci since lock file may be out of sync)
-RUN npm install --ignore-scripts
+# Use npm ci where possible and enable cache mount for faster rebuilds
+RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts
 
 # Copy source code
 COPY . .
 
-# Accept build arguments for environment variables
-ARG REACT_APP_API_URL
-ARG REACT_APP_UMAMI_ENABLED
-ARG REACT_APP_UMAMI_SRC
-ARG REACT_APP_UMAMI_WEBSITE_ID
-ARG REACT_APP_UMAMI_DOMAINS
-ARG REACT_APP_UMAMI_AUTO_TRACK
-ARG REACT_APP_UMAMI_DEBUG
+# Accept build argument for API URL (only env var actually used in the app)
+ARG REACT_APP_API_URL=http://localhost:3311
 
-# Set environment variables for build
+# Set environment variable for build
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
-ENV REACT_APP_UMAMI_ENABLED=$REACT_APP_UMAMI_ENABLED
-ENV REACT_APP_UMAMI_SRC=$REACT_APP_UMAMI_SRC
-ENV REACT_APP_UMAMI_WEBSITE_ID=$REACT_APP_UMAMI_WEBSITE_ID
-ENV REACT_APP_UMAMI_DOMAINS=$REACT_APP_UMAMI_DOMAINS
-ENV REACT_APP_UMAMI_AUTO_TRACK=$REACT_APP_UMAMI_AUTO_TRACK
-ENV REACT_APP_UMAMI_DEBUG=$REACT_APP_UMAMI_DEBUG
 
 # Build the application
 RUN npm run build
 
-# Production stage with Nginx
-FROM nginx:alpine AS runner
-
-# Install wget for healthcheck
-RUN apk add --no-cache wget
+# Production stage with Nginx unprivileged for security
+FROM nginxinc/nginx-unprivileged:alpine AS runner
 
 # Copy built assets from builder
 COPY --from=builder /app/build /usr/share/nginx/html
@@ -44,12 +29,13 @@ COPY --from=builder /app/build /usr/share/nginx/html
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
-EXPOSE 80
+# Expose port 8080 (nginx-unprivileged default)
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
-  CMD wget --spider -q http://localhost:80 || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
+
