@@ -1,5 +1,7 @@
 # SalesScout
 
+![SalesScout](cover.png)
+
 A full-stack TypeScript application for tracking and monitoring deals from RedFlagDeals. Automatically scrapes deal listings, allows users to create custom queries, and notifies when matching deals are found.
 
 > NOTE: This project was initally written for CPSC-2650. I did a re-design and added security features while keeping the core of it the same (restrictions, functionality etc.) so I can host & showcase it.
