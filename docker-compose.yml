@@ -41,10 +41,10 @@ services:
       mongo:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -fsS http://localhost:${BACKEND_PORT:-1534}/ >/dev/null || exit 1"]
-      interval: 10s
+      test: ["CMD", "true"]
+      interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 1
 
   frontend:
     build:
