@@ -59,6 +59,8 @@ services:
       args:
         REACT_APP_API_URL: "${REACT_APP_API_URL}"
     container_name: sales-scout-frontend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     ports:
       - "${FRONTEND_PORT}:8080"
     labels:
