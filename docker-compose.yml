@@ -23,6 +23,8 @@ services:
       dockerfile: Dockerfile.backend
     container_name: sales-scout-backend
     env_file: .env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     environment:
       PORT: "${BACKEND_PORT}"
       BACKEND_PORT: "${BACKEND_PORT}"
@@ -59,6 +61,8 @@ services:
     container_name: sales-scout-frontend
     ports:
       - "${FRONTEND_PORT}:8080"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     depends_on:
       backend:
         condition: service_healthy
